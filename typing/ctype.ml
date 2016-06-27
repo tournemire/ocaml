@@ -3854,6 +3854,18 @@ let rec build_subtype env visited loops posi level t =
       else (t, Unchanged)
   | Tunivar _ | Tpackage _ ->
       (t, Unchanged)
+  | Tunit {ud_vars = vlist ; ud_base = b} ->
+      if memq_warn t visited then (t, Unchanged) else
+      let visited = t :: visited in
+      let vlist' =
+	let f (v,n) = build_subtype env visited loops posi level v,n in
+	List.map f vlist
+      in
+      let c = collect (List.map fst vlist') in
+      if c > Unchanged
+      then (newty (Tunit {ud_vars = List.map (fun ((a,_),c) -> a,c) vlist';
+			  ud_base = b}), c)
+      else (t, Unchanged)
 
 let enlarge_type env ty =
   warn := false;
