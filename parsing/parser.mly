@@ -2247,6 +2247,8 @@ simple_core_type2:
       { mktyp(Ptyp_any) }
   | type_longident
       { mktyp(Ptyp_constr(mkrhs $1 1, [])) }
+  | type_longident LBRACKET signature_item RBRACKET
+      { mktyp_attrs (Ptyp_constr(mkrhs $1 1, [])) (None,[mknoloc "ocaml.dim", PSig [$3]]) }
   | simple_core_type2 type_longident
       { mktyp(Ptyp_constr(mkrhs $2 2, [$1])) }
   | LPAREN core_type_comma_list RPAREN type_longident
