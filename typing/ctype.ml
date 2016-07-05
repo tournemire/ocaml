@@ -2029,6 +2029,7 @@ let rec mcomp type_pairs env t1 t2 =
               (mcomp type_pairs env)
         | (Tunivar _, Tunivar _) ->
             unify_univar t1' t2' !univar_pairs
+        | (Tunit _, Tunit _) -> () (* temporary *)
         | (_, _) ->
             raise (Unify [])
       end
@@ -2418,6 +2419,8 @@ and unify3 env t1 t1' t2 t2' =
           end
       | (Ttuple tl1, Ttuple tl2) ->
           unify_list env tl1 tl2
+      | (Tunit ud1, Tunit ud2) ->
+         if Units.unify ud1 ud2 then () else raise (Unify [t1, t2])
       | (Tconstr (p1, tl1, _), Tconstr (p2, tl2, _)) when Path.same p1 p2 ->
           if !umode = Expression || not !generate_equations then
             unify_list env tl1 tl2
@@ -3855,17 +3858,17 @@ let rec build_subtype env visited loops posi level t =
   | Tunivar _ | Tpackage _ ->
       (t, Unchanged)
   | Tunit {ud_vars = vlist ; ud_base = b} ->
-      if memq_warn t visited then (t, Unchanged) else
-      let visited = t :: visited in
-      let vlist' =
-	let f (v,n) = build_subtype env visited loops posi level v,n in
-	List.map f vlist
-      in
-      let c = collect (List.map fst vlist') in
-      if c > Unchanged
-      then (newty (Tunit {ud_vars = List.map (fun ((a,_),c) -> a,c) vlist';
-			  ud_base = b}), c)
-      else (t, Unchanged)
+     if memq_warn t visited then (t, Unchanged) else
+       let visited = t :: visited in
+       let vlist' =
+         let f (v,n) = build_subtype env visited loops posi level v,n in
+         List.map f vlist
+       in
+       let c = collect (List.map fst vlist') in
+       if c > Unchanged
+       then (newty (Tunit {ud_vars = List.map (fun ((a,_),c) -> a,c) vlist';
+                           ud_base = b}), c)
+       else (t, Unchanged)
 
 let enlarge_type env ty =
   warn := false;
