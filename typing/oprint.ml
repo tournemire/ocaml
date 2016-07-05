@@ -239,6 +239,8 @@ and print_simple_out_type ppf =
         )
         n tyl;
       fprintf ppf ")@]"
+  | Otyp_unit (_vl, _bl) ->        (* des trucs *)
+     fprintf ppf "[]"
   | Otyp_attribute (t, attr) ->
       fprintf ppf "@[<1>(%a [@@%s])@]" print_out_type t attr.oattr_name
 and print_record_decl ppf lbls =
