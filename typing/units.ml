@@ -62,15 +62,10 @@ module Ratio = struct
 open Types;;
 open Btype;;
 
-(* rajouter private dans un mli *)
-(* unit_expr ref *)
 type dvar = type_expr;;
 type dim = unit_desc;;
 
-exception Dim_unification_failed of dim * dim;;
-
 exception Unknown_base_dimension;;
-
 
 let one = { ud_vars = [] ;
             ud_base = [] }
@@ -79,15 +74,14 @@ let one = { ud_vars = [] ;
 (* as merge is used, the fields vars and base need to be sorted lists *)
 let mul e1 e2 =
   let merge l1 l2 = List.merge (fun a b -> compare (fst a) (fst b)) l1 l2 in
-  let rec add res = function
-    | [] -> res
-    | [x] -> x::res
-    | (x,n)::(y,m)::t when x = y -> (x, n + m)::(add res t)
-    | x::t -> x::(add res t) in
+  let rec add l = match l with
+    | [] | [_] -> l
+    | (x,n)::(y,m)::t when x == y -> (x, n + m)::(add t)
+    | x::t -> x::(add t) in
   let filter l = List.filter (fun (_,n) -> n <> 0 ) l in
   (* eliminate variables with exponent zero *)
-  { ud_vars = filter (add [] (merge e1.ud_vars e2.ud_vars)) ;
-    ud_base = filter (add [] (merge e1.ud_base e2.ud_base)) }
+  { ud_vars = filter (add (merge e1.ud_vars e2.ud_vars)) ;
+    ud_base = filter (add (merge e1.ud_base e2.ud_base)) }
 ;;
 
 let rec list_mul = function
@@ -133,24 +127,30 @@ let link_unit tv ud =
   link_type tv (newty2 tv.level (Tunit ud))
 ;;
 
-(* remplacer dcomp d'une substitution élémentaire par le Tlink qui va
-bien *)
+let rec norm e =
+  (* repr sur tous les membres gauches de ud_vars *)
+  let vars = List.map (fun (v,e) -> repr v, e) e.ud_vars in
+  (* partitionner variables et autres *)
+  let vars,notvars = List.partition (fun (v,_) -> is_Tvar v) vars in
+  List.fold_left (fun ud (t,e)-> match t.desc with
+                                   Tunit ud' -> mul ud (pow e (norm ud'))
+                                 | _ -> assert false )
+                 {e with ud_vars = vars} notvars
+;;
+
 
 (* try to unify e1 and e2, return true if succeded *)
 let unify e1 e2 =
   let rec aux e =
     (* substitution, multiplication etc... ensure that variables *)
     (* with exponent zero are eliminated *)
+    let e = norm e in
     if e.ud_vars = []
-    then begin
-        if List.for_all (fun (_,n) -> n = 0) e.ud_base
-        then true
-        else raise (Dim_unification_failed (e1, e2)) end
+    then List.for_all (fun (_,n) -> n = 0) e.ud_base
     else begin
-
         (* find the variable with the smallest non-zero exponent  *)
         let rec find_min m = function
-          | [] -> raise (Dim_unification_failed (e1, e2))
+          | [] -> assert false  (* e.ud_vars id checked above *)
           | [h] -> if abs (snd h) < abs (snd m) then h else m
           | h::t -> let n = if abs (snd h) < abs (snd m) then h else m in
                     find_min n t in
@@ -175,5 +175,5 @@ let unify e1 e2 =
               link_unit v (mul { ud_vars = [(nv,1)] ; ud_base = [] } new_e);
               aux e )
       end in
-  aux (mul e2 (inv e2))
+  aux (mul e1 (inv e2))
 ;;
