@@ -2420,7 +2420,7 @@ and unify3 env t1 t1' t2 t2' =
       | (Ttuple tl1, Ttuple tl2) ->
           unify_list env tl1 tl2
       | (Tunit ud1, Tunit ud2) ->
-         if Units.unify ud1 ud2 then () else raise (Unify [t1, t2])
+         if Units.unify ud1 ud2 then () else raise (Unify [])
       | (Tconstr (p1, tl1, _), Tconstr (p2, tl2, _)) when Path.same p1 p2 ->
           if !umode = Expression || not !generate_equations then
             unify_list env tl1 tl2
@@ -2979,6 +2979,7 @@ let rec moregen inst_nongen type_pairs env t1 t2 =
                 (moregen inst_nongen type_pairs env)
           | (Tunivar _, Tunivar _) ->
               unify_univar t1' t2' !univar_pairs
+          | (Tunit _, Tunit _) -> () (* TODO *)
           | (_, _) ->
               raise (Unify [])
         end
@@ -4231,6 +4232,9 @@ let rec normalize_type_rec env visited ty =
         let fields, row = flatten_fields fi in
         let fi' = build_fields fi.level fields row in
         log_type ty; fi.desc <- fi'.desc
+    | Tunit ud ->
+       iter_type_expr (normalize_type_rec env visited) ty;
+       ty.desc <- Tunit (Units.norm ud)
     | _ -> ()
     end;
     iter_type_expr (normalize_type_rec env visited) ty

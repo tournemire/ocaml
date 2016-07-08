@@ -353,7 +353,7 @@ let rec transl_type env policy styp =
         (* retrieve dimensional attribute *)
         try
           let pl = List.assoc (mknoloc "ocaml.dim") styp.ptyp_attributes in
-          let ud = transl_dim env pl in
+          let ud = transl_dim env policy pl in
           let ty = newty (Tunit ud) in
           (ctyp (Ttyp_unit ud) ty)::args
         with Not_found -> args in
@@ -369,10 +369,10 @@ let rec transl_type env policy styp =
             if (repr ty).level = Btype.generic_level then unify_var else unify
       in
       List.iter2
-        (fun (sty, cty) ty' ->
+        (fun cty ty' ->
            try unify_param env ty' cty.ctyp_type with Unify trace ->
-             raise (Error(sty.ptyp_loc, env, Type_mismatch (swap_list trace))))
-        (List.combine stl args) params;
+             raise (Error(cty.ctyp_loc, env, Type_mismatch (swap_list trace))))
+        args params;
       let constr =
         newconstr path (List.map (fun ctyp -> ctyp.ctyp_type) args) in
       begin try
@@ -657,7 +657,7 @@ let rec transl_type env policy styp =
      raise (Error_forward (Builtin_attributes.error_of_extension ext))
 
 (* tranform ocaml expr into dim expr (unit_desc) *)
-and transl_dim env pl =
+and transl_dim env policy pl =
   (* extract expression from payload *)
   let e = match pl with
   | PStr [{pstr_desc = Pstr_eval (e, _) ; _ }] -> e
@@ -670,16 +670,19 @@ and transl_dim env pl =
     | Pexp_ident {txt = Longident.Lident id ; _} ->
        { Units.one with ud_base = [id, 1] }
     | Pexp_variant (s, None) ->
-       { Units.one with ud_vars = [newty (Tvar (Some s)),1] }
+       let v = {ptyp_desc = Ptyp_var s;
+                ptyp_loc = exp.pexp_loc ;
+                ptyp_attributes = [] } in
+       { Units.one with ud_vars = [(transl_type env policy v).ctyp_type ,1] }
     | Pexp_apply ({pexp_desc = Pexp_ident {txt = Longident.Lident s ; loc } ; _},
                   [_, arg1 ; _, arg2]) ->
       let ud1 = dim_of_expr arg1 in
       begin match s with
       | "*" ->
-         let ud2 = dim_of_expr arg1 in
+         let ud2 = dim_of_expr arg2 in
          Units.mul ud1 ud2
       | "/" ->
-         let ud2 = dim_of_expr arg1 in
+         let ud2 = dim_of_expr arg2 in
          Units.mul ud1 (Units.inv ud2)
       | "^" | "**" ->
          let n = match arg2 with
