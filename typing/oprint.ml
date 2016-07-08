@@ -239,8 +239,18 @@ and print_simple_out_type ppf =
         )
         n tyl;
       fprintf ppf ")@]"
-  | Otyp_unit (_vl, _bl) ->        (* des trucs *)
-     fprintf ppf "[]"
+  | Otyp_unit (vl, bl) ->
+     let punit pname (name,e) =
+       match e with
+         0 -> ()
+       | 1 -> fprintf ppf "@ * %a" pname name
+       | -1 -> fprintf ppf "@ / %a" pname name
+       | _ -> fprintf ppf "@ * %a ^ %d" pname name e
+     and pvar ppf = fprintf ppf "`%s"
+     and pbase ppf = fprintf ppf "%s"
+     in
+     fprintf ppf "[@[1%t%t@]]" (fun ppf -> List.iter (punit pvar) vl)
+             (fun ppf -> List.iter (punit pbase) bl)
   | Otyp_attribute (t, attr) ->
       fprintf ppf "@[<1>(%a [@@%s])@]" print_out_type t attr.oattr_name
 and print_record_decl ppf lbls =
