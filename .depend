@@ -451,14 +451,14 @@ typing/types.cmx : typing/primitive.cmx typing/path.cmx \
 typing/types.cmi : typing/primitive.cmi typing/path.cmi \
     parsing/parsetree.cmi parsing/longident.cmi parsing/location.cmi \
     typing/ident.cmi parsing/asttypes.cmi
-typing/typetexp.cmo : utils/warnings.cmi typing/types.cmi \
+typing/typetexp.cmo : utils/warnings.cmi typing/units.cmi typing/types.cmi \
     typing/typedtree.cmi utils/tbl.cmi typing/printtyp.cmi typing/predef.cmi \
     typing/path.cmi parsing/parsetree.cmi utils/misc.cmi \
     parsing/longident.cmi parsing/location.cmi typing/env.cmi \
     typing/ctype.cmi utils/clflags.cmi parsing/builtin_attributes.cmi \
     typing/btype.cmi parsing/asttypes.cmi parsing/ast_helper.cmi \
     typing/typetexp.cmi
-typing/typetexp.cmx : utils/warnings.cmx typing/types.cmx \
+typing/typetexp.cmx : utils/warnings.cmx typing/units.cmx typing/types.cmx \
     typing/typedtree.cmx utils/tbl.cmx typing/printtyp.cmx typing/predef.cmx \
     typing/path.cmx parsing/parsetree.cmi utils/misc.cmx \
     parsing/longident.cmx parsing/location.cmx typing/env.cmx \
