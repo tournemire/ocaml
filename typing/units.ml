@@ -20,11 +20,6 @@ let rec gcd p q =
     else gcd q (p mod q)
 ;;
 
-let lcm p q =
-  let g = gcd p q in
-  p / g * q
-;;
-
 let make a b =
   if b = 0
   then raise Null_denominator
@@ -245,15 +240,16 @@ let build_matrix eqlist =
         let b = List.map fst (List.rev_append l.ud_base r.ud_base) in
         sort_units (lvars::left) (rvars::right) (b::base) q in
   let l,r,b = sort_units [] [] [] eqlist in
+  (* sort and eliminate duplicates *)
   let left = TypeSet.elements
       (List.fold_left
          (fun s e -> TypeSet.union s (TypeSet.of_list e))
-         TypeSet.empty l) and
-      right = TypeSet.elements
+         TypeSet.empty l)
+  and right = TypeSet.elements
       (List.fold_left
          (fun s e -> TypeSet.union s (TypeSet.of_list e))
-         TypeSet.empty r) and
-      base = StringSet.elements
+         TypeSet.empty r)
+  and base = StringSet.elements
       (List.fold_left
          (fun s e -> StringSet.union s (StringSet.of_list e))
          StringSet.empty b) in
@@ -266,7 +262,7 @@ let build_matrix eqlist =
   let m = Array.make_matrix num_rows
       (num_left + num_right + num_base) Ratio.zero in
 
-  (* fill in matrix *)
+  (* get the index of an element in a list *)
   let index_of x l =
     let rec count n l = match l with
     | h::t -> if h = x then n else count (n+1) t
@@ -284,6 +280,7 @@ let build_matrix eqlist =
     List.iter (fun (v,e) -> m.(i).(num_left + num_right + index_of v base) <-
       Ratio.of_int e) b in
 
+  (* fill in the matrix *)
   let rec fill_mat i = function
     | [] -> ()
     | (ud1,ud2)::t ->
@@ -291,4 +288,13 @@ let build_matrix eqlist =
         fill_mat (i+1) t in
   fill_mat 0 eqlist;
   m
+;;
+
+let dim_moregen inst_nongen link eqlist =
+  let m = build_matrix eqlist in
+  (* TODO *)
+  if inst_nongen then
+    gauss m
+  else
+    gauss m
 ;;

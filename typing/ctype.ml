@@ -3085,7 +3085,13 @@ and moregen_row inst_nongen type_pairs env row1 row2 =
 let moregen inst_nongen type_pairs env patt subj =
   univar_pairs := [];
   dimension_eqs := [];
-  moregen inst_nongen type_pairs env patt subj
+  moregen inst_nongen type_pairs env patt subj;
+
+  let link t1 t2 =
+    moregen_occur env t1.level t2;
+    occur env t1 t2;
+    link_type t1 t2 in
+  Units.dim_moregen inst_nongen link !dimension_eqs
 
 (*
    Non-generic variable can be instanciated only if [inst_nongen] is
