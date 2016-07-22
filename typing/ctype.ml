@@ -1944,7 +1944,7 @@ let is_instantiable env p =
     decl.type_manifest = None &&
     not (non_aliasable p decl)
   with Not_found -> false
-  
+
 
 (* PR#7113: -safe-string should be a global property *)
 let compatible_paths p1 p2 =
@@ -2891,6 +2891,8 @@ let filter_self_method env lab priv meths ty =
                         (*  Matching between type schemes  *)
                         (***********************************)
 
+let dimension_eqs = ref []
+
 (*
    Update the level of [ty]. First check that the levels of generic
    variables from the subject are not lowered.
@@ -2927,6 +2929,7 @@ let rec moregen inst_nongen type_pairs env t1 t2 =
   let t2 = repr t2 in
   if t1 == t2 then () else
 
+  let moregen_rec = moregen inst_nongen type_pairs env in
   try
     match (t1.desc, t2.desc) with
       (Tvar _, _) when may_instantiate inst_nongen t1 ->
@@ -2949,10 +2952,13 @@ let rec moregen inst_nongen type_pairs env t1 t2 =
             (Tvar _, _) when may_instantiate inst_nongen t1' ->
               moregen_occur env t1'.level t2;
               link_type t1' t2
+          | (Tunit _, Tvar _) ->
+              moregen_rec t1'
+                (newty2 t2'.level (Tunit {ud_vars = [t2',1] ; ud_base = []}))
           | (Tarrow (l1, t1, u1, _), Tarrow (l2, t2, u2, _)) when l1 = l2
             || !Clflags.classic && not (is_optional l1 || is_optional l2) ->
-              moregen inst_nongen type_pairs env t1 t2;
-              moregen inst_nongen type_pairs env u1 u2
+              moregen_rec t1 t2;
+              moregen_rec u1 u2
           | (Ttuple tl1, Ttuple tl2) ->
               moregen_list inst_nongen type_pairs env tl1 tl2
           | (Tconstr (p1, tl1, _), Tconstr (p2, tl2, _))
@@ -2973,13 +2979,13 @@ let rec moregen inst_nongen type_pairs env t1 t2 =
           | (Tnil, Tnil) ->
               ()
           | (Tpoly (t1, []), Tpoly (t2, [])) ->
-              moregen inst_nongen type_pairs env t1 t2
+              moregen_rec t1 t2
           | (Tpoly (t1, tl1), Tpoly (t2, tl2)) ->
-              enter_poly env univar_pairs t1 tl1 t2 tl2
-                (moregen inst_nongen type_pairs env)
+              enter_poly env univar_pairs t1 tl1 t2 tl2 moregen_rec
           | (Tunivar _, Tunivar _) ->
               unify_univar t1' t2' !univar_pairs
-          | (Tunit _, Tunit _) -> () (* TODO *)
+          | (Tunit ud1, Tunit ud2) ->  (* add an equation to the list *)
+              dimension_eqs := (ud1, ud2)::(!dimension_eqs)
           | (_, _) ->
               raise (Unify [])
         end
@@ -3078,6 +3084,7 @@ and moregen_row inst_nongen type_pairs env row1 row2 =
 (* Must empty univar_pairs first *)
 let moregen inst_nongen type_pairs env patt subj =
   univar_pairs := [];
+  dimension_eqs := [];
   moregen inst_nongen type_pairs env patt subj
 
 (*
@@ -3246,6 +3253,7 @@ let rec eqtype rename type_pairs subst env t1 t2 =
                 (eqtype rename type_pairs subst env)
           | (Tunivar _, Tunivar _) ->
               unify_univar t1' t2' !univar_pairs
+          | (Tunit _, Tunit _) -> ()
           | (_, _) ->
               raise (Unify [])
         end
