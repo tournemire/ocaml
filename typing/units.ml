@@ -1,11 +1,6 @@
 open Types;;
 open Btype;;
 
-type dvar = type_expr;;
-type dim = unit_desc;;
-
-exception Unknown_base_dimension;;
-
 let one = { ud_vars = [] ;
             ud_base = [] }
 ;;
@@ -135,8 +130,8 @@ let build_matrix eqlist =
   let m = Array.make_matrix num_rows
       (num_left + num_right + num_base) 0 in
   (* build the types array *)
-  let left_info = Array.map (fun ud -> Left ud) (Array.of_list left) in
-  let right_info = Array.map (fun ud -> Right ud) (Array.of_list right) in
+  let left_info = Array.map (fun t -> Left t) (Array.of_list left) in
+  let right_info = Array.map (fun t -> Right t) (Array.of_list right) in
   let base_info = Array.map (fun s -> Base s) (Array.of_list base) in
   let columns_info =
     Array.append  left_info (Array.append right_info base_info) in
@@ -199,7 +194,7 @@ let smallest_elt m used vars =
 
 (* supposing that m.(x).(y) = 1 or -1 *)
 (* eliminate var y from unused equations (i <> x)*)
-let eliminate m vars used x y =
+let eliminate m used x y =
   let c = m.(x).(y) in
   let n = Array.length m and
       p = Array.length m.(0) in
@@ -265,7 +260,7 @@ let knuth m vars =
 
     if c = 1 then begin
       (* eliminate var n°y in all equations *)
-      eliminate m vars used x y;
+      eliminate m used x y;
       used.(x) <- true;    (* mark equation x as used *)
       aux substs
     end else begin
@@ -276,7 +271,7 @@ let knuth m vars =
         if divides_nonvars m.(x) vars y
         then begin
           div_row m.(x) c;
-          eliminate m vars used x y;
+          eliminate m used x y;
           aux substs
         end
 
@@ -309,15 +304,19 @@ let rec solve = function
 
 let dim_moregen inst_nongen may_inst link eqlist =
   let m,columns_info,nleft,nright,nbase = build_matrix eqlist in
-
   let nvars = nleft + nright in
-  let vars_info = Array.sub columns_info 0 nvars in
-  let typevars =
-    Array.map
-      (function Left tvar | Right tvar -> tvar | _ -> assert false)
-      vars_info in
-  let base = Array.map (function Base s -> s | _ -> assert false) vars_info in
-  let is_var = Array.map may_inst vars_info in
+
+  (* unwrap and separate variables and base units *)
+  let unwrap cols_info nv nb =
+    let typevars = Array.make nv (newgenty Tnil)
+    and base = Array.make nb "" in
+    let distribute i = function
+      | Left tvar | Right tvar -> typevars.(i) <- tvar
+      | Base s -> base.(i - nv) <- s in
+    Array.iteri distribute cols_info;
+    typevars,base in
+  let typevars, base = unwrap columns_info nvars nbase in
+  let is_var = Array.map may_inst typevars in
 
   (* apply knuth algorithm to the equation system *)
   let success, subst_list = knuth m is_var in
@@ -335,8 +334,57 @@ let dim_moregen inst_nongen may_inst link eqlist =
       let ud_vars = filter_nonzeros ud_vars in
       let ud_base = Array.mapi (fun i t -> t,subst.(i + nvars)) base in
       let ud_base = filter_nonzeros ud_base in
-      {ud_vars ; ud_base} in
-    List.iter (fun (i,s) -> link typevars.(i) (f s)) sol
+      Tunit {ud_vars ; ud_base} in
+    List.iter (fun (i,s) -> link typevars.(i) (newty2 (typevars.(i).level - 1)
+        (f s))) sol
   end ;
   success
+;;
+
+let dim_eqtype subst dim_eqs =
+  let m,columns_info,nleft,nright,_ = build_matrix dim_eqs in
+
+  let vars_info = Array.sub columns_info 0 (nleft + nright) in
+  let is_var =
+    Array.map (function Left _ -> true | _ -> false) vars_info in
+  (* add equations from subst *)
+  let unwrap = function
+    | Left t | Right t -> t
+    | _ -> assert false in
+  let typevars = Array.map unwrap vars_info in
+
+  (* look for dimensional correspondances in subst and generate *)
+  (* associated equations to add in the matrix *)
+  let rec pair_equations =
+    (* return the couple : *)
+    (* t exists in a, if t exists then index else length of a  *)
+    let index_of t a =
+      let n = Array.length a in
+      let i = ref 0
+      and found = ref false in
+      while !i < n && not !found do
+        if t = a.(!i) then found := true else incr i
+      done ;
+      !found, !i in
+    (* build the array with 1 in i1, -1 in i2 and 0 elsewhere *)
+    let eq_of_var_pair i1 i2 =
+      let r = Array.make (nleft + nright) 0 in
+      r.(i1) <- 1 ; r.(i2) <- -1;
+      r in
+    function
+      | [] -> []
+      | (t1,t2)::q ->
+          let exist1,i1 = index_of t1 typevars in
+          let exist2,i2 = index_of t2 typevars in
+          let eqs = pair_equations q in
+          if exist1 && exist2 then (eq_of_var_pair i1 i2)::eqs
+          else eqs in
+  let m = Array.append m (Array.of_list (pair_equations subst)) in
+
+
+  let m' = Array.map Array.copy m in
+
+  let left_moregen_right, _ = knuth m is_var in
+  let right_moregen_left, _ = knuth m' (Array.map not is_var) in
+  left_moregen_right && right_moregen_left
 ;;
