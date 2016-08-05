@@ -3179,6 +3179,8 @@ let matches env ty ty' =
                  (*  Equivalence between parameterized types  *)
                  (*********************************************)
 
+let dimension_eqs = ref []
+
 let expand_head_rigid env ty =
   let old = !rigid_variants in
   rigid_variants := true;
@@ -3259,7 +3261,8 @@ let rec eqtype rename type_pairs subst env t1 t2 =
                 (eqtype rename type_pairs subst env)
           | (Tunivar _, Tunivar _) ->
               unify_univar t1' t2' !univar_pairs
-          | (Tunit _, Tunit _) -> ()
+          | (Tunit ud1, Tunit ud2) ->
+              dimension_eqs := (ud1, ud2)::(!dimension_eqs)
           | (_, _) ->
               raise (Unify [])
         end
@@ -3341,8 +3344,12 @@ and eqtype_row rename type_pairs subst env row1 row2 =
 (* Must empty univar_pairs first *)
 let eqtype_list rename type_pairs subst env tl1 tl2 =
   univar_pairs := [];
+  dimension_eqs := [];
   let snap = Btype.snapshot () in
-  try eqtype_list rename type_pairs subst env tl1 tl2; backtrack snap
+  try
+    eqtype_list rename type_pairs subst env tl1 tl2;
+    dim_eqtype subst !dimension_eqs;
+    backtrack snap
   with exn -> backtrack snap; raise exn
 
 let eqtype rename type_pairs subst env t1 t2 =

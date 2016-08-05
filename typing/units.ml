@@ -1,65 +1,3 @@
-(* classic rational implementation over ints *)
-(* in normal form whe have den > 0 and gcd(num, den) = 1  *)
-
-module Ratio = struct
-exception Null_denominator
-
-type ratio = { num : int ;
-               den : int }
-
-
-let zero = { num = 0 ; den = 1 };;
-let of_int n = {num = n ; den = 1};;
-
-(* compute gcd of _positive_ integers *)
-let rec gcd p q =
-  if p < q then gcd q p
-  else
-    if q = 0
-    then p
-    else gcd q (p mod q)
-;;
-
-let make a b =
-  if b = 0
-  then raise Null_denominator
-  else if a = 0 then zero
-  else
-    let s_a = if a > 0 then 1 else -1 in
-    let s_b = if b > 0 then 1 else -1 in
-    let g = s_b * (gcd (a * s_a) (b * s_b)) in
-    { num = a / g ; den = b / g}
-;;
-
-let plus p q =
-  make (p.num * q.den + q.num * p.den) (p.den * q.den)
-;;
-
-let minus p q = plus p {num = -q.num ; den = q.den};;
-
-
-let mult p q =
-  make (p.num * q.num) (p.den * q.den)
-;;
-
-let div p q =
-  mult p (make q.den q.num)
-;;
-
-let inv r =
-  if r.num = 0 then raise Null_denominator
-  else
-    let s = if r.num > 0 then 1 else -1 in
-    {num = s * r.den ; den = s * r.num}
-;;
-
-let less p q = (p.num * q.den < q.num * p.den);;
-
-let greater p q = less q p;;
-
-let abs_val r = {r with num = abs r.num};;
-end
-
 open Types;;
 open Btype;;
 
@@ -85,11 +23,6 @@ let mul e1 e2 =
     ud_base = filter (add (merge e1.ud_base e2.ud_base)) }
 ;;
 
-let rec list_mul = function
-  | [] -> one
-  | h::t -> mul h (list_mul t)
-;;
-
 let pow n e =
   let f l = List.map (fun (a,b) -> (a, n * b)) l in
   { ud_vars = f e.ud_vars ;
@@ -97,25 +30,6 @@ let pow n e =
 ;;
 
 let inv = pow (-1);;
-
-type dsubst = (dvar * dim) list ;;
-
-let dsubst : dsubst -> dim -> dim =
-  fun s e ->
-    let in_dom x = List.mem_assoc (fst x) s in
-    let dom,fix = List.partition in_dom e.ud_vars in
-    let l = List.map (fun (v,n) -> pow n (List.assoc v s)) dom in
-    mul (list_mul l) {ud_vars = fix ; ud_base = e.ud_base}
-;;
-
-(* compose substitutions *)
-let dcomp : dsubst -> dsubst -> dsubst =
-  fun s t ->
-    (* apply s to images of t *)
-    let u = List.map (fun (v,im) -> v,dsubst s im) t in
-    (* add substitutions of s that are not in dom(t)  *)
-    (List.filter (fun (v,_) -> not (List.mem_assoc v t)) s) @ u
-;;
 
 (* test whether n is a common divisor of all exponents in e *)
 let common_divisor n e =
@@ -177,60 +91,19 @@ let unify e1 e2 =
   aux (mul e1 (inv e2))
 ;;
 
-(* gaussian elimination *)
 
-(* swap rows i and j in m *)
-let swap m i j =
-  let r = m.(i) in
-  Array.set m i m.(j);
-  Array.set m j r
-;;
-
-(* multiply row i by x in m *)
-let mult_row m x i =
-  Array.iteri (fun j y -> Array.set m.(i) j (Ratio.mult x y)) m.(i)
-;;
-
-(* perform a := a + x * b in m *)
-let add_scal_row x a b =
-  let r = Array.map (Ratio.mult x) b in
-  let add j y = a.(j) <- Ratio.plus r.(j) y in
-  Array.iteri add a
-;;
-
-
-let gauss m =
-  let num_rows = Array.length m in
-  let num_cols = Array.length m.(0) in
-  let r = ref (-1) in
-(* find the next pivot, defined as the element on column j which has     *)
-(* the largest absolute value and an index greater than r (last pivot) *)
-  let abs_less p q = Ratio.less (Ratio.abs_val p) (Ratio.abs_val q) in
-  let find_pivot j =
-    let max_index = ref (!r+1) in
-    for i = !r+1 to num_rows -1 do
-      if abs_less m.(!max_index).(j) m.(i).(j)
-      then max_index := i
-    done ;
-    !max_index
-  in
-
-  for j = 0 to min num_cols num_rows - 1 do
-    let k = find_pivot j in
-    if m.(k).(j) <> Ratio.zero then begin
-      incr r;
-      mult_row m (Ratio.inv m.(k).(j)) k;
-      swap m !r k;
-      for i = !r + 1 to num_rows -1 do
-        add_scal_row (Ratio.minus Ratio.zero m.(i).(j)) m.(i) m.(!r);
-      done
-    end
-  done
-;;
 
 module StringSet = Set.Make(String);;
 
+type column_info =
+  | Left of type_expr
+  | Right of type_expr
+  | Base of string
+;;
+
 let build_matrix eqlist =
+  let eqlist = List.map (fun (ud1,ud2) -> norm ud1, norm ud2) eqlist in
+
   (* list all variables *)
   let rec sort_units left right base = function
     | [] -> left,right,base
@@ -260,7 +133,13 @@ let build_matrix eqlist =
       num_base = List.length base in
   let num_rows = List.length eqlist in
   let m = Array.make_matrix num_rows
-      (num_left + num_right + num_base) Ratio.zero in
+      (num_left + num_right + num_base) 0 in
+  (* build the types array *)
+  let left_info = Array.map (fun ud -> Left ud) (Array.of_list left) in
+  let right_info = Array.map (fun ud -> Right ud) (Array.of_list right) in
+  let base_info = Array.map (fun s -> Base s) (Array.of_list base) in
+  let columns_info =
+    Array.append  left_info (Array.append right_info base_info) in
 
   (* get the index of an element in a list *)
   let index_of x l =
@@ -271,14 +150,13 @@ let build_matrix eqlist =
 
   (* write the equation ud1 = ud2 in the i-nth line *)
   let write_eq i ud1 ud2 =
-    List.iter (fun (v,e) -> m.(i).(index_of v left) <-
-      Ratio.of_int e) ud1.ud_vars;
+    List.iter (fun (v,e) -> m.(i).(index_of v left) <- e) ud1.ud_vars;
     List.iter (fun (v,e) -> m.(i).(num_left + index_of v right) <-
-      Ratio.of_int (-e)) ud2.ud_vars;
+      -e) ud2.ud_vars;
     (* group base variables *)
     let b = (mul ud1 (inv ud2)).ud_base in
     List.iter (fun (v,e) -> m.(i).(num_left + num_right + index_of v base) <-
-      Ratio.of_int e) b in
+      e) b in
 
   (* fill in the matrix *)
   let rec fill_mat i = function
@@ -287,14 +165,178 @@ let build_matrix eqlist =
         write_eq i ud1 ud2 ;
         fill_mat (i+1) t in
   fill_mat 0 eqlist;
-  m
+  m,columns_info,num_left,num_right,num_base
 ;;
 
-let dim_moregen inst_nongen link eqlist =
-  let m = build_matrix eqlist in
-  (* TODO *)
-  if inst_nongen then
-    gauss m
-  else
-    gauss m
+
+
+(* divide r by x in m *)
+let div_row r c =
+  Array.iteri (fun j y ->  r.(j) <- y / c) r
+;;
+
+let smallest_elt m used vars =
+  let current = ref 0 in
+  let x,y = ref 0, ref 0 in
+  let n = Array.length m and
+      p = Array.length m.(0) in
+  for i = 0 to n-1 do
+    (* search only in unused equations *)
+    if not used.(i) then
+      for j = 0 to p-1 do
+        let candidate = m.(i).(j) in
+        let is_variable = vars.(j) in
+
+        if is_variable &&
+          candidate <> 0 &&
+          (!current = 0 || abs candidate <= abs !current)
+
+        then (x := i ; y := j ; current := candidate)
+      done
+  done ;
+  !x,!y,!current
+;;
+
+(* supposing that m.(x).(y) = 1 or -1 *)
+(* eliminate var y from unused equations (i <> x)*)
+let eliminate m vars used x y =
+  let c = m.(x).(y) in
+  let n = Array.length m and
+      p = Array.length m.(0) in
+  for i = 0 to n-1 do
+    (* work only on unused equations *)
+    if not used.(i) && x <> i then begin
+      for j = 0 to p-1 do
+        if j <> y then
+          m.(i).(j) <- m.(i).(j) - m.(i).(y) * c * m.(x).(j)
+      done ;
+      m.(i).(y) <- 0
+    end
+  done ;
+;;
+
+let divides_vars r vars y =
+  let check = Array.map2 (fun b elt -> not b || elt mod r.(y) = 0) vars r in
+  check = Array.make (Array.length r) true
+;;
+
+let divides_nonvars r vars y =
+  let check = Array.map2 (fun b elt -> b || elt mod r.(y) = 0) vars r in
+  check = Array.make (Array.length r) true
+;;
+
+let newvar m vars used x y =
+  let c = m.(x).(y) in
+  let n = Array.length m and
+      p = Array.length m.(0) in
+  (* rewrite the original equation with the new variable *)
+  let r = m.(x) in
+  let old_var_subst =
+    Array.mapi (fun j e-> if vars.(j) then -e/c else 0) r in
+  (* actually not the real expression *)
+  (* the substitution matrix is I_n replacing the y-th line by old_var_subst  *)
+  old_var_subst.(y) <- 1;
+
+  Array.iteri (fun j e -> if vars.(j) then r.(j) <- e mod c) r;
+  r.(y) <- c ;
+
+  for i = 0 to n-1 do
+    (* work only on unused equations *)
+    if not used.(i) && x <> i then begin
+      for j = 0 to p-1 do
+        if j <> y && vars.(j) then
+          m.(i).(j) <- m.(i).(j) + m.(i).(y) * old_var_subst.(j)
+      done
+    end
+  done ;
+  old_var_subst
+;;
+
+(* extended Euclidean algorithm (Knuth, TAOCP vol.2) *)
+(* vars : array determining instanciable variables  *)
+let knuth m vars =
+  let n = Array.length m in
+  (* register which equations have been used *)
+  let used = Array.make n false in
+
+  let rec aux substs =
+    let x,y,c = smallest_elt m used vars in
+    if c = 0 then true, substs else
+
+    if c = 1 then begin
+      (* eliminate var n°y in all equations *)
+      eliminate m vars used x y;
+      used.(x) <- true;    (* mark equation x as used *)
+      aux substs
+    end else begin
+      (* c divides all variables coeffs  *)
+      if divides_vars m.(x) vars y
+      then begin
+        (* c also divides nonvariables coeffs *)
+        if divides_nonvars m.(x) vars y
+        then begin
+          div_row m.(x) c;
+          eliminate m vars used x y;
+          aux substs
+        end
+
+        else false, substs          (* no solution *)
+      end
+      else
+        aux ((y, newvar m vars used x y)::substs)
+    end
+  in aux []
+;;
+
+
+(* compute the expression of row when replacing entry x with *)
+(* its expression var *)
+let subst_one_var row var x =
+  let c = row.(x) in
+  let f i e = row.(i) <- e + c * var.(i) in
+  Array.iteri f row;
+  row.(x) <- c * var.(x)
+;;
+
+let rec solve = function
+  | [] -> []
+  | (i,var)::q ->
+      (* build the sublist of equations containing var i *)
+      let sub = solve q in
+      List.iter (fun (_,row) -> subst_one_var row var i) sub;
+      if List.exists (fun (j,_) -> j = i) sub then sub else (i,var)::sub
+;;
+
+let dim_moregen inst_nongen may_inst link eqlist =
+  let m,columns_info,nleft,nright,nbase = build_matrix eqlist in
+
+  let nvars = nleft + nright in
+  let vars_info = Array.sub columns_info 0 nvars in
+  let typevars =
+    Array.map
+      (function Left tvar | Right tvar -> tvar | _ -> assert false)
+      vars_info in
+  let base = Array.map (function Base s -> s | _ -> assert false) vars_info in
+  let is_var = Array.map may_inst vars_info in
+
+  (* apply knuth algorithm to the equation system *)
+  let success, subst_list = knuth m is_var in
+  if success && inst_nongen then begin
+    (* instantiate according to the substitutions given by the algo *)
+    let sol = solve subst_list in
+    let newtypevars = Array.copy typevars in
+    (* generates fresh vars for every substituted var *)
+    List.iter (fun (i,_) ->
+      newtypevars.(i) <- newty2 typevars.(i).level (Tvar None)) sol;
+    let f subst =
+      let filter_nonzeros a =
+        List.filter (fun (_,x) -> x <> 0) (Array.to_list a) in
+      let ud_vars = Array.mapi (fun i t -> t,subst.(i)) newtypevars in
+      let ud_vars = filter_nonzeros ud_vars in
+      let ud_base = Array.mapi (fun i t -> t,subst.(i + nvars)) base in
+      let ud_base = filter_nonzeros ud_base in
+      {ud_vars ; ud_base} in
+    List.iter (fun (i,s) -> link typevars.(i) (f s)) sol
+  end ;
+  success
 ;;
