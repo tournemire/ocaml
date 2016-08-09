@@ -131,7 +131,7 @@ let build_matrix eqlist =
   let right_info = Array.map (fun t -> Right t) (Array.of_list right) in
   let base_info = Array.map (fun s -> Base s) (Array.of_list base) in
   let columns_info =
-    Array.append  left_info (Array.append right_info base_info) in
+    Array.append left_info (Array.append right_info base_info) in
 
   (* get the index of an element in a list *)
   let index_of x l =
@@ -171,7 +171,7 @@ let smallest_elt m used vars =
   let current = ref 0 in
   let x,y = ref 0, ref 0 in
   let n = Array.length m and
-      p = Array.length m.(0) in
+      p = Array.length vars in
   for i = 0 to n-1 do
     (* search only in unused equations *)
     if not used.(i) then
