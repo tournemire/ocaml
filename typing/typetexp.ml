@@ -688,7 +688,9 @@ and transl_dim env policy pl =
          let n = match arg2 with
            | {pexp_desc = Pexp_constant (Pconst_integer (s,_)) ; _} ->
               int_of_string s
-           | _ -> assert false in
+           | _ ->
+               raise (Error (arg2.pexp_loc, env,
+                             Bad_unit_expression "Bad exponent")) in
          Units.pow n ud1
       | _ -> raise (Error (loc, env, Bad_unit_expression "Bad operator" ))
       end

@@ -246,13 +246,13 @@ and print_simple_out_type ppf =
          match e with
            0 -> ()
          | 1 -> first := false; fprintf ppf "%a" pname name
-         | _ -> first := false; fprintf ppf "%a ^ %d" pname name e
+         | _ -> first := false; fprintf ppf "%a ** %d" pname name e
        else
          match e with
            0 -> ()
          | 1 -> fprintf ppf "@ * %a" pname name
          | -1 -> fprintf ppf "@ / %a" pname name
-         | _ -> fprintf ppf "@ * %a ^ %d" pname name e
+         | _ -> fprintf ppf "@ * %a ** %d" pname name e
      and pvar ppf = fprintf ppf "`%s"
      and pbase ppf = fprintf ppf "%s"
      in
