@@ -15,3 +15,7 @@ module Dim : sig
     let ( /: ) = ( /. )
     let inv f = 1. /. f
   end
+;;
+
+open Dim;;
+let x : dfloat [m] = create 3.;;
