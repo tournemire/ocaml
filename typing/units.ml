@@ -304,6 +304,7 @@ let rec solve = function
 
 let dim_moregen inst_nongen may_inst link eqlist =
   let m,columns_info,nleft,nright,nbase = build_matrix eqlist in
+  if Array.length m = 0 || Array.length m.(0) = 0 then true else
   let nvars = nleft + nright in
 
   (* unwrap and separate variables and base units *)
@@ -343,6 +344,7 @@ let dim_moregen inst_nongen may_inst link eqlist =
 
 let dim_eqtype subst dim_eqs =
   let m,columns_info,nleft,nright,_ = build_matrix dim_eqs in
+  if Array.length m = 0 || Array.length m.(0) = 0 then true else
 
   let vars_info = Array.sub columns_info 0 (nleft + nright) in
   let is_var =
