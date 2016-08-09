@@ -192,6 +192,13 @@ and print_simple_out_type ppf =
     Otyp_class (ng, id, tyl) ->
       fprintf ppf "@[%a%s#%a@]" print_typargs tyl (if ng then "_" else "")
         print_ident id
+  | Otyp_constr (id, (Otyp_unit _ as ou) :: tyl) ->
+      pp_open_box ppf 0;
+      print_typargs ppf tyl;
+      print_ident ppf id;
+      pp_print_space ppf ();
+      print_simple_out_type ppf ou;
+      pp_close_box ppf ()
   | Otyp_constr (id, tyl) ->
       pp_open_box ppf 0;
       print_typargs ppf tyl;

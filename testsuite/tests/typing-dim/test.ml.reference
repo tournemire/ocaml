@@ -2,21 +2,21 @@
 #                                   module Dim :
   sig
     type 'a dfloat = private float
-    val create : float -> [`a] dfloat
-    val ( +: ) : [`a] dfloat -> [`a] dfloat -> [`a] dfloat
-    val ( *: ) : [`a] dfloat -> [`b] dfloat -> [`a * `b] dfloat
-    val ( /: ) : [`a] dfloat -> [`b] dfloat -> [`a / `b] dfloat
-    val inv : [`a] dfloat -> [`a ** -1] dfloat
+    val create : float -> dfloat [`a]
+    val ( +: ) : dfloat [`a] -> dfloat [`a] -> dfloat [`a]
+    val ( *: ) : dfloat [`a] -> dfloat [`b] -> dfloat [`a * `b]
+    val ( /: ) : dfloat [`a] -> dfloat [`b] -> dfloat [`a / `b]
+    val inv : dfloat [`a] -> dfloat [`a ** -1]
   end
-#   # type dlist = [l] list
-# val x : [m] Dim.dfloat = 3.
-# val div : [`a] Dim.dfloat -> [`b] Dim.dfloat -> [`a / `b] Dim.dfloat = <fun>
+#   # type dlist = list [l]
+# val x : Dim.dfloat [m] = 3.
+# val div : Dim.dfloat [`a] -> Dim.dfloat [`b] -> Dim.dfloat [`a / `b] = <fun>
 #   val lcm :
-  [`a ** 15] Dim.dfloat ->
-  [`a ** 10] Dim.dfloat -> [`a ** 6] Dim.dfloat -> [`a ** 30] Dim.dfloat =
+  Dim.dfloat [`a ** 15] ->
+  Dim.dfloat [`a ** 10] -> Dim.dfloat [`a ** 6] -> Dim.dfloat [`a ** 30] =
   <fun>
 #   val lcm_bis :
-  [`a ** 15] Dim.dfloat ->
-  [`a ** 10] Dim.dfloat -> [`a ** 6] Dim.dfloat -> [`a ** 30] Dim.dfloat =
+  Dim.dfloat [`a ** 15] ->
+  Dim.dfloat [`a ** 10] -> Dim.dfloat [`a ** 6] -> Dim.dfloat [`a ** 30] =
   <fun>
 # 
