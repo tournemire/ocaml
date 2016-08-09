@@ -1,0 +1,22 @@
+
+#                                   module Dim :
+  sig
+    type 'a dfloat = private float
+    val create : float -> [`a] dfloat
+    val ( +: ) : [`a] dfloat -> [`a] dfloat -> [`a] dfloat
+    val ( *: ) : [`a] dfloat -> [`b] dfloat -> [`a * `b] dfloat
+    val ( /: ) : [`a] dfloat -> [`b] dfloat -> [`a / `b] dfloat
+    val inv : [`a] dfloat -> [`a ** -1] dfloat
+  end
+#   # type dlist = [l] list
+# val x : [m] Dim.dfloat = 3.
+# val div : [`a] Dim.dfloat -> [`b] Dim.dfloat -> [`a / `b] Dim.dfloat = <fun>
+#   val lcm :
+  [`a ** 15] Dim.dfloat ->
+  [`a ** 10] Dim.dfloat -> [`a ** 6] Dim.dfloat -> [`a ** 30] Dim.dfloat =
+  <fun>
+#   val lcm_bis :
+  [`a ** 15] Dim.dfloat ->
+  [`a ** 10] Dim.dfloat -> [`a ** 6] Dim.dfloat -> [`a ** 30] Dim.dfloat =
+  <fun>
+# 
