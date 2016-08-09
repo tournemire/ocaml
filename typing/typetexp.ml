@@ -355,7 +355,7 @@ let rec transl_type env policy styp =
           let pl = List.assoc (mknoloc "ocaml.dim") styp.ptyp_attributes in
           let ud = transl_dim env policy pl in
           let ty = newty (Tunit ud) in
-          (ctyp (Ttyp_unit ud) ty)::args
+          (ctyp Ttyp_unit ty)::args
         with Not_found -> args in
       if List.length args <> decl.type_arity then
         raise(Error(styp.ptyp_loc, env,
