@@ -2424,6 +2424,7 @@ and unify3 env t1 t1' t2 t2' =
           let link_unit env tv ud =
             let ty = newgenty (Tunit ud) in
             update_level env tv.level ty ;
+            occur env tv ty;
             link_type tv ty in
           if Units.unify (link_unit !env) ud1 ud2 then () else raise (Unify [])
       | (Tconstr (p1, tl1, _), Tconstr (p2, tl2, _)) when Path.same p1 p2 ->

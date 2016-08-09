@@ -7,14 +7,15 @@ let one = { ud_vars = [] ;
 
 (* as merge is used, the fields vars and base need to be sorted lists *)
 let mul e1 e2 =
-  let merge l1 l2 = List.merge (fun a b -> compare (fst a) (fst b)) l1 l2 in
+  let merge = List.merge (fun a b -> compare (fst a) (fst b)) in
+  let sort = List.sort (fun a b -> compare (fst a).id (fst b).id) in
   let rec add l = match l with
   | [] | [_] -> l
   | (x,n)::(y,m)::t when x == y -> (x, n + m)::(add t)
   | x::t -> x::(add t) in
   let filter l = List.filter (fun (_,n) -> n <> 0 ) l in
   (* eliminate variables with exponent zero *)
-  { ud_vars = filter (add (merge e1.ud_vars e2.ud_vars)) ;
+  { ud_vars = filter (add (sort (e1.ud_vars @ e2.ud_vars))) ;
     ud_base = filter (add (merge e1.ud_base e2.ud_base)) }
 ;;
 
@@ -49,7 +50,7 @@ let rec norm e =
 (* try to unify e1 and e2, return true if succeded *)
 let unify link_unit e1 e2 =
   let rec aux e =
-    (* substitution, multiplication etc... ensure that variables *)
+(* substitution, multiplication etc... ensure that variables *)
     (* with exponent zero are eliminated *)
     let e = norm e in
     if e.ud_vars = []

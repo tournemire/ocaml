@@ -684,7 +684,7 @@ and transl_dim env policy pl =
       | "/" ->
          let ud2 = dim_of_expr arg2 in
          Units.mul ud1 (Units.inv ud2)
-      | "^" | "**" ->
+      | "**" ->
          let n = match arg2 with
            | {pexp_desc = Pexp_constant (Pconst_integer (s,_)) ; _} ->
               int_of_string s
