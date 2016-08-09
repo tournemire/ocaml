@@ -268,7 +268,7 @@ let iter_type_expr f ty =
   | Tunivar _           -> ()
   | Tpoly (ty, tyl)     -> f ty; List.iter f tyl
   | Tpackage (_, _, l)  -> List.iter f l
-  | Tunit {ud_vars}     -> List.iter (fun (v,e) -> f v) ud_vars
+  | Tunit {ud_vars}     -> List.iter (fun (v,_) -> f v) ud_vars
 
 let rec iter_abbrev f = function
     Mnil                   -> ()
