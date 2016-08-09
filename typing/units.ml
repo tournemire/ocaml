@@ -33,9 +33,6 @@ let common_divisor n e =
   test e.ud_base && test e.ud_vars
 ;;
 
-let link_unit tv ud =
-  link_type tv (newty2 tv.level (Tunit ud))
-;;
 
 let rec norm e =
   (* call repr on each variable in ud_vars *)
@@ -50,7 +47,7 @@ let rec norm e =
 
 
 (* try to unify e1 and e2, return true if succeded *)
-let unify e1 e2 =
+let unify link_unit e1 e2 =
   let rec aux e =
     (* substitution, multiplication etc... ensure that variables *)
     (* with exponent zero are eliminated *)
@@ -334,9 +331,8 @@ let dim_moregen inst_nongen may_inst link eqlist =
       let ud_vars = filter_nonzeros ud_vars in
       let ud_base = Array.mapi (fun i t -> t,subst.(i + nvars)) base in
       let ud_base = filter_nonzeros ud_base in
-      Tunit {ud_vars ; ud_base} in
-    List.iter (fun (i,s) -> link typevars.(i) (newty2 (typevars.(i).level - 1)
-        (f s))) sol
+      {ud_vars ; ud_base} in
+    List.iter (fun (i,s) -> link typevars.(i) (f s)) sol
   end ;
   success
 ;;

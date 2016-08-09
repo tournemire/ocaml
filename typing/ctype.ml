@@ -242,6 +242,7 @@ let is_datatype decl=
   | Type_abstract -> false
 
 
+
                   (**********************************************)
                   (*  Miscellaneous operations on object types  *)
                   (**********************************************)
@@ -2420,7 +2421,11 @@ and unify3 env t1 t1' t2 t2' =
       | (Ttuple tl1, Ttuple tl2) ->
           unify_list env tl1 tl2
       | (Tunit ud1, Tunit ud2) ->
-         if Units.unify ud1 ud2 then () else raise (Unify [])
+          let link_unit env tv ud =
+            let ty = newgenty (Tunit ud) in
+            update_level env tv.level ty ;
+            link_type tv ty in
+          if Units.unify (link_unit !env) ud1 ud2 then () else raise (Unify [])
       | (Tconstr (p1, tl1, _), Tconstr (p2, tl2, _)) when Path.same p1 p2 ->
           if !umode = Expression || not !generate_equations then
             unify_list env tl1 tl2
@@ -3087,9 +3092,12 @@ let moregen inst_nongen type_pairs env patt subj =
   dimension_eqs := [];
   moregen inst_nongen type_pairs env patt subj;
 
-  let link t1 t2 =
+
+  let link t1 u2 =
+    let t2 = newgenty (Tunit u2) in
     moregen_occur env t1.level t2;
     occur env t1 t2;
+    update_level env t1.level t2;
     link_type t1 t2 in
   if not (Units.dim_moregen inst_nongen (may_instantiate inst_nongen)
             link !dimension_eqs)
@@ -3350,8 +3358,9 @@ let eqtype_list rename type_pairs subst env tl1 tl2 =
   let snap = Btype.snapshot () in
   try
     eqtype_list rename type_pairs subst env tl1 tl2;
-    if not (Units.dim_eqtype !subst !dimension_eqs) then raise (Unify [])
-    backtrack snap
+    if Units.dim_eqtype !subst !dimension_eqs
+    then backtrack snap
+    else raise (Unify [])
   with exn -> backtrack snap; raise exn
 
 let eqtype rename type_pairs subst env t1 t2 =
