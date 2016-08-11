@@ -11,7 +11,7 @@ let mul e1 e2 =
   let sort = List.sort (fun a b -> compare (fst a).id (fst b).id) in
   let rec add l = match l with
   | [] | [_] -> l
-  | (x,n)::(y,m)::t when x == y -> (x, n + m)::(add t)
+  | (x,n)::(y,m)::t when x = y -> (x, n + m)::(add t)
   | x::t -> x::(add t) in
   let filter l = List.filter (fun (_,n) -> n <> 0 ) l in
   (* eliminate variables with exponent zero *)
