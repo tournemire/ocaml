@@ -95,70 +95,61 @@ type column_info =
   | Base of string
 ;;
 
-let build_matrix eqlist =
-  let eqlist = List.map (fun (ud1,ud2) -> norm ud1, norm ud2) eqlist in
+(* get the index of an element in a list *)
+let index_of x l =
+  let rec count n l = match l with
+  | h::t -> if h = x then n else count (n+1) t
+  | [] -> raise Not_found in
+  count 0 l
 
+let extract_vars eqlist =
   (* list all variables *)
-  let rec sort_units left right base = function
+  let rec get_vars left right base = function
     | [] -> left,right,base
     | (l,r)::q ->
         let lvars = List.map fst l.ud_vars in
         let rvars = List.map fst r.ud_vars in
         let b = List.map fst (List.rev_append l.ud_base r.ud_base) in
-        sort_units (lvars::left) (rvars::right) (b::base) q in
-  let l,r,b = sort_units [] [] [] eqlist in
+        get_vars (lvars::left) (rvars::right) (b::base) q in
+  let l,r,b = get_vars [] [] [] eqlist in
   (* sort and eliminate duplicates *)
-  let left = TypeSet.elements
-      (List.fold_left
-         (fun s e -> TypeSet.union s (TypeSet.of_list e))
-         TypeSet.empty l)
-  and right = TypeSet.elements
-      (List.fold_left
-         (fun s e -> TypeSet.union s (TypeSet.of_list e))
-         TypeSet.empty r)
-  and base = StringSet.elements
-      (List.fold_left
-         (fun s e -> StringSet.union s (StringSet.of_list e))
-         StringSet.empty b) in
+  let sort (type a) (module S : Set.S with type elt = a) l =
+    S.elements (List.fold_left (fun s e -> S.union s (S.of_list e)) S.empty l)
+  in
+  sort (module TypeSet) l, sort (module TypeSet) r, sort (module StringSet) b
 
-(* compute matrix dimensions *)
-  let num_left = List.length left and
-      num_right = List.length right and
-      num_base = List.length base in
-  let num_rows = List.length eqlist in
-  let m = Array.make_matrix num_rows
-      (num_left + num_right + num_base) 0 in
+let build_matrix eqlist =
+  let eqlist = List.map (fun (ud1,ud2) -> norm ud1, norm ud2) eqlist in
+  let (left, right, base) = extract_vars eqlist in
+
+  (* compute matrix dimensions *)
+  let num_left = List.length left
+  and num_right = List.length right
+  and num_base = List.length base
+  and num_rows = List.length eqlist in
+  let m = Array.make_matrix num_rows (num_left + num_right + num_base) 0 in
   (* build the types array *)
-  let left_info = Array.map (fun t -> Left t) (Array.of_list left) in
-  let right_info = Array.map (fun t -> Right t) (Array.of_list right) in
-  let base_info = Array.map (fun s -> Base s) (Array.of_list base) in
+  let left_info = Array.map (fun t -> Left t) (Array.of_list left)
+  and right_info = Array.map (fun t -> Right t) (Array.of_list right)
+  and base_info = Array.map (fun s -> Base s) (Array.of_list base) in
   let columns_info =
     Array.append left_info (Array.append right_info base_info) in
 
-  (* get the index of an element in a list *)
-  let index_of x l =
-    let rec count n l = match l with
-    | h::t -> if h = x then n else count (n+1) t
-    | [] -> raise Not_found in
-    count 0 l in
-
   (* write the equation ud1 = ud2 in the i-nth line *)
-  let write_eq i ud1 ud2 =
+  let write_eq i (ud1, ud2) =
     List.iter (fun (v,e) -> m.(i).(index_of v left) <- e) ud1.ud_vars;
-    List.iter (fun (v,e) -> m.(i).(num_left + index_of v right) <-
-      -e) ud2.ud_vars;
+    List.iter
+      (fun (v,e) -> m.(i).(num_left + index_of v right) <- -e)
+      ud2.ud_vars;
     (* group base variables *)
     let b = (mul ud1 (inv ud2)).ud_base in
-    List.iter (fun (v,e) -> m.(i).(num_left + num_right + index_of v base) <-
-      e) b in
+    List.iter
+      (fun (v,e) -> m.(i).(num_left + num_right + index_of v base) <- e) b
+  in
 
   (* fill in the matrix *)
-  let rec fill_mat i = function
-    | [] -> ()
-    | (ud1,ud2)::t ->
-        write_eq i ud1 ud2 ;
-        fill_mat (i+1) t in
-  fill_mat 0 eqlist;
+  Array.iteri write_eq (Array.of_list eqlist);
+
   m,columns_info,num_left,num_right,num_base
 ;;
 
