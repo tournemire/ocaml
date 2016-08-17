@@ -8,11 +8,11 @@ val norm : unit_desc -> unit_desc
 val unify :
   (type_expr -> unit_desc -> unit) ->
   unit_desc -> unit_desc -> bool
-val dim_moregen :
+val moregen :
   bool ->
   (type_expr -> bool) ->
   (type_expr -> unit_desc -> unit) ->
   (unit_desc * unit_desc) list -> bool
-val dim_eqtype :
+val eqtype :
   (type_expr * type_expr) list ->
   (unit_desc * unit_desc) list -> bool
