@@ -246,7 +246,6 @@ and print_simple_out_type ppf =
         )
         n tyl;
       fprintf ppf ")@]"
-  | Otyp_unit ([], []) -> fprintf ppf "[1]"
   | Otyp_unit (vl, bl) ->
      let first = ref true in
      let punit pname (name,e) =
@@ -264,8 +263,9 @@ and print_simple_out_type ppf =
      and pvar ppf = fprintf ppf "`%s"
      and pbase ppf = fprintf ppf "%s"
      in
-     fprintf ppf "[@[%t%t@]]" (fun _ppf -> List.iter (punit pvar) vl)
-             (fun _ppf -> List.iter (punit pbase) bl)
+     fprintf ppf "[@[%t%t@]%t]" (fun _ppf -> List.iter (punit pvar) vl)
+       (fun _ppf -> List.iter (punit pbase) bl)
+       (fun ppf -> if !first then fprintf ppf "1")
   | Otyp_attribute (t, attr) ->
       fprintf ppf "@[<1>(%a [@@%s])@]" print_out_type t attr.oattr_name
 and print_record_decl ppf lbls =
