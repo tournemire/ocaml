@@ -34,5 +34,5 @@ let lcm_bis x y z =
 (* polymorphic recursion *)
 let rec prodlist: 'a 'b. dfloat[`a] list -> dfloat[`b] list -> dfloat[`a * `b] list =
   fun  x y -> match x,y with
-  | [],[] -> []
+  | [],_ | _, [] -> []
   | (x::xs,y::ys) -> (x *: y) :: (prodlist ys xs);;

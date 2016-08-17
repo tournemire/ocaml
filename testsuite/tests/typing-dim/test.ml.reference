@@ -22,4 +22,7 @@
   Dim.dfloat [`a ** 15] ->
   Dim.dfloat [`a ** 10] -> Dim.dfloat [`a ** 6] -> Dim.dfloat [`a ** 30] =
   <fun>
+#           val prodlist :
+  Dim.dfloat [`a] list -> Dim.dfloat [`b] list -> Dim.dfloat [`a * `b] list =
+  <fun>
 # 
