@@ -30,3 +30,9 @@ let lcm (x: dfloat [`a]) (y: dfloat [`b]) (z: dfloat [`c]) =
   (x *: x) +: (y *: y *: y) +: (z *: z *: z *: z *: z);;
 let lcm_bis x y z =
   (x *: x) +: (y *: y *: y) +: (z *: z *: z *: z *: z);;
+
+(* polymorphic recursion *)
+let rec prodlist: 'a 'b. dfloat[`a] list -> dfloat[`b] list -> dfloat[`a * `b] list =
+  fun  x y -> match x,y with
+  | [],[] -> []
+  | (x::xs,y::ys) -> (x *: y) :: (prodlist ys xs);;

@@ -41,7 +41,8 @@ let rec norm e =
   (* call repr on each variable in ud_vars *)
   let vars = List.map (fun (v,e) -> repr v, e) e.ud_vars in
   (* separate real variables from instantiated ones *)
-  let vars,notvars = List.partition (fun (v,_) -> is_Tvar v) vars in
+  let vars,notvars =
+    List.partition (fun (v,_) -> is_Tvar v || is_Tunivar v) vars in
   List.fold_left (fun ud (t,e)-> match t.desc with
     Tunit ud' -> mul ud (pow e (norm ud'))
   | _ -> assert false )
