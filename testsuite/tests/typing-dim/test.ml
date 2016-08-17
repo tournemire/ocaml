@@ -36,3 +36,6 @@ let rec prodlist: 'a 'b. dfloat[`a] list -> dfloat[`b] list -> dfloat[`a * `b] l
   fun  x y -> match x,y with
   | [],_ | _, [] -> []
   | (x::xs,y::ys) -> (x *: y) :: (prodlist ys xs);;
+
+let f (x : 'a option) : dfloat[`a] option = None;;
+f (Some 1);;

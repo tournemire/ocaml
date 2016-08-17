@@ -42,10 +42,11 @@ let rec norm e =
   let vars = List.map (fun (v,e) -> repr v, e) e.ud_vars in
   (* separate real variables from instantiated ones *)
   let vars,notvars =
-    List.partition (fun (v,_) -> is_Tvar v || is_Tunivar v) vars in
-  List.fold_left (fun ud (t,e)-> match t.desc with
-    Tunit ud' -> mul ud (pow e (norm ud'))
-  | _ -> assert false )
+    List.partition (function ({desc=Tunit _},_) -> false | _ -> true) vars in
+  List.fold_left
+    (fun ud (t,e)-> match t.desc with
+      Tunit ud' -> mul ud (pow e (norm ud'))
+    | _ -> assert false )
     {e with ud_vars = vars} notvars
 ;;
 
@@ -97,6 +98,7 @@ type column_info =
   | Left of type_expr
   | Right of type_expr
   | Base of string
+  | BadVar
 ;;
 
 (* get the index of an element in a list *)
@@ -133,8 +135,12 @@ let build_matrix eqlist =
   and num_rows = List.length eqlist in
   let m = Array.make_matrix num_rows (num_left + num_right + num_base) 0 in
   (* build the types array *)
-  let left_info = Array.map (fun t -> Left t) (Array.of_list left)
-  and right_info = Array.map (fun t -> Right t) (Array.of_list right)
+  let left_info =
+    Array.map
+      (fun t -> if is_Tvar t then Left t else BadVar) (Array.of_list left)
+  and right_info =
+    Array.map
+      (fun t -> if is_Tvar t then Right t else BadVar) (Array.of_list right)
   and base_info = Array.map (fun s -> Base s) (Array.of_list base) in
   let columns_info =
     Array.append left_info (Array.append right_info base_info) in
@@ -303,6 +309,7 @@ let rec solve = function
 
 let moregen inst_nongen may_inst link eqlist =
   let m,columns_info,nleft,nright,nbase = build_matrix eqlist in
+  if Array.mem BadVar columns_info then false else
   if Array.length m = 0 || Array.length m.(0) = 0 then true else
   let nvars = nleft + nright in
 
@@ -312,7 +319,8 @@ let moregen inst_nongen may_inst link eqlist =
     and base = Array.make nb "" in
     let distribute i = function
       | Left tvar | Right tvar -> typevars.(i) <- tvar
-      | Base s -> base.(i - nv) <- s in
+      | Base s -> base.(i - nv) <- s
+      | BadVar -> assert false in
     Array.iteri distribute cols_info;
     typevars,base in
   let typevars, base = unwrap columns_info nvars nbase in
@@ -342,6 +350,7 @@ let moregen inst_nongen may_inst link eqlist =
 
 let eqtype subst dim_eqs =
   let m,columns_info,nleft,nright,_ = build_matrix dim_eqs in
+  if Array.mem BadVar columns_info then false else
   if Array.length m = 0 || Array.length m.(0) = 0 then true else
 
   let vars_info = Array.sub columns_info 0 (nleft + nright) in

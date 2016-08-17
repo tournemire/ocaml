@@ -646,7 +646,12 @@ let rec tree_of_typexp sch ty =
           List.map (fun li -> String.concat "." (Longident.flatten li)) n in
         Otyp_module (Path.name p, n, tree_of_typlist sch tyl)
     | Tunit ud ->
-       let vl = List.map (fun (v,e) -> name_of_type v, e) ud.ud_vars in
+       let vl =
+         List.map
+           (fun (v,e) ->
+             match v.desc with Tvar _ | Tunivar _ -> name_of_type v, e
+             | _ -> "<bad unit variable>", e)
+           ud.ud_vars in
        Otyp_unit (vl, ud.ud_base)
 
   in

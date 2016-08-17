@@ -2422,6 +2422,7 @@ and unify3 env t1 t1' t2 t2' =
           unify_list env tl1 tl2
       | (Tunit ud1, Tunit ud2) ->
           let link_unit env tv ud =
+            if not (is_Tvar tv) then raise (Unify []);
             let ty = newgenty (Tunit ud) in
             update_level env tv.level ty ;
             occur env tv ty;

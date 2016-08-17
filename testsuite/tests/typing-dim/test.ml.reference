@@ -25,4 +25,6 @@
 #           val prodlist :
   Dim.dfloat [`a] list -> Dim.dfloat [`b] list -> Dim.dfloat [`a * `b] list =
   <fun>
+#   val f : 'a option -> Dim.dfloat [`a] option = <fun>
+# - : Dim.dfloat [`<bad unit variable>] option = None
 # 
