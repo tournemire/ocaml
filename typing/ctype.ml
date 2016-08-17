@@ -3100,7 +3100,7 @@ let moregen inst_nongen type_pairs env patt subj =
     occur env t1 t2;
     update_level env t1.level t2;
     link_type t1 t2 in
-  if not (Units.dim_moregen inst_nongen (may_instantiate inst_nongen)
+  if not (Units.moregen inst_nongen (may_instantiate inst_nongen)
             link !dimension_eqs)
   then raise (Unify [])
 
@@ -3359,7 +3359,7 @@ let eqtype_list rename type_pairs subst env tl1 tl2 =
   let snap = Btype.snapshot () in
   try
     eqtype_list rename type_pairs subst env tl1 tl2;
-    if Units.dim_eqtype !subst !dimension_eqs
+    if Units.eqtype !subst !dimension_eqs
     then backtrack snap
     else raise (Unify [])
   with exn -> backtrack snap; raise exn

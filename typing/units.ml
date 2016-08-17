@@ -1,6 +1,8 @@
 open Types;;
 open Btype;;
 
+(** Basic operations on units *)
+
 let one = { ud_vars = [] ;
             ud_base = [] }
 ;;
@@ -46,6 +48,7 @@ let rec norm e =
     {e with ud_vars = vars} notvars
 ;;
 
+(** Unification *)
 
 (* try to unify e1 and e2, return true if succeded *)
 let unify link_unit e1 e2 =
@@ -85,7 +88,7 @@ let unify link_unit e1 e2 =
   aux (mul e1 (inv e2))
 ;;
 
-
+(** matrix based resolution of units equations *)
 
 module StringSet = Set.Make(String);;
 
@@ -202,15 +205,17 @@ let eliminate m used x y =
 
 let divides_vars r vars y =
   let check = Array.map2 (fun b elt -> not b || elt mod r.(y) = 0) vars r in
-  check = Array.make (Array.length r) true
+  Array.for_all (fun x -> x) check
 ;;
 
 let divides_nonvars r vars y =
   let check = Array.map2 (fun b elt -> b || elt mod r.(y) = 0) vars r in
-  check = Array.make (Array.length r) true
+  Array.for_all (fun x -> x) check
 ;;
 
-let newvar m vars used x y =
+(* substitute variable x by a new one simplifying the equation system *)
+(* update matrix and return substitution *)
+let subst_by_fresh m vars used x y =
   let c = m.(x).(y) in
   let n = Array.length m and
       p = Array.length m.(0) in
@@ -238,7 +243,7 @@ let newvar m vars used x y =
 ;;
 
 (* extended Euclidean algorithm (Knuth, TAOCP vol.2) *)
-(* vars : array determining instanciable variables  *)
+(* vars : array determining instantiable variables  *)
 let knuth m vars =
   let n = Array.length m in
   (* register which equations have been used *)
@@ -248,6 +253,7 @@ let knuth m vars =
     let x,y,c = smallest_elt m used vars in
     if c = 0 then true, substs else
 
+    (* if a variable has the coeff 1 we can eliminate it from the system *)
     if c = 1 then begin
       (* eliminate var n°y in all equations *)
       eliminate m used x y;
@@ -255,20 +261,17 @@ let knuth m vars =
       aux substs
     end else begin
       (* c divides all variables coeffs  *)
-      if divides_vars m.(x) vars y
-      then begin
+      if divides_vars m.(x) vars y then begin
         (* c also divides nonvariables coeffs *)
-        if divides_nonvars m.(x) vars y
-        then begin
+        if divides_nonvars m.(x) vars y then begin
           div_row m.(x) c;
           eliminate m used x y;
+          used.(x) <- true;    (* mark equation x as used *)
           aux substs
-        end
-
-        else false, substs          (* no solution *)
-      end
-      else
-        aux ((y, newvar m vars used x y)::substs)
+        end else
+          false, substs          (* no solution *)
+      end else
+        aux ((y, subst_by_fresh m vars used x y)::substs)
     end
   in aux []
 ;;
@@ -278,11 +281,12 @@ let knuth m vars =
 (* its expression var *)
 let subst_one_var row var x =
   let c = row.(x) in
-  let f i e = row.(i) <- e + c * var.(i) in
-  Array.iteri f row;
+  Array.iteri (fun i e -> row.(i) <- e + c * var.(i)) row;
   row.(x) <- c * var.(x)
 ;;
 
+(* compose all substitutions *)
+(* the resulting substitution yields the solution of the system  *)
 let rec solve = function
   | [] -> []
   | (i,var)::q ->
@@ -292,7 +296,7 @@ let rec solve = function
       if List.exists (fun (j,_) -> j = i) sub then sub else (i,var)::sub
 ;;
 
-let dim_moregen inst_nongen may_inst link eqlist =
+let moregen inst_nongen may_inst link eqlist =
   let m,columns_info,nleft,nright,nbase = build_matrix eqlist in
   if Array.length m = 0 || Array.length m.(0) = 0 then true else
   let nvars = nleft + nright in
@@ -318,20 +322,20 @@ let dim_moregen inst_nongen may_inst link eqlist =
     (* generates fresh vars for every substituted var *)
     List.iter (fun (i,_) ->
       newtypevars.(i) <- newty2 typevars.(i).level (Tvar None)) sol;
-    let f subst =
+    let build_unit img =
       let filter_nonzeros a =
         List.filter (fun (_,x) -> x <> 0) (Array.to_list a) in
-      let ud_vars = Array.mapi (fun i t -> t,subst.(i)) newtypevars in
+      let ud_vars = Array.mapi (fun i t -> t,img.(i)) newtypevars in
       let ud_vars = filter_nonzeros ud_vars in
-      let ud_base = Array.mapi (fun i t -> t,subst.(i + nvars)) base in
+      let ud_base = Array.mapi (fun i t -> t,img.(i + nvars)) base in
       let ud_base = filter_nonzeros ud_base in
       {ud_vars ; ud_base} in
-    List.iter (fun (i,s) -> link typevars.(i) (f s)) sol
+    List.iter (fun (i,s) -> link typevars.(i) (build_unit s)) sol
   end ;
   success
 ;;
 
-let dim_eqtype subst dim_eqs =
+let eqtype subst dim_eqs =
   let m,columns_info,nleft,nright,_ = build_matrix dim_eqs in
   if Array.length m = 0 || Array.length m.(0) = 0 then true else
 
