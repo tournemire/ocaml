@@ -1,5 +1,5 @@
 
-#                                   module Dim :
+#                                       module Dim :
   sig
     type 'a dfloat = private float
     val create : float -> dfloat [`a]
@@ -7,10 +7,13 @@
     val ( *: ) : dfloat [`a] -> dfloat [`b] -> dfloat [`a * `b]
     val ( /: ) : dfloat [`a] -> dfloat [`b] -> dfloat [`a / `b]
     val inv : dfloat [`a] -> dfloat [`a ** -1]
+    val dsqrt : dfloat [`a ** 2] -> dfloat [`a]
   end
 #   # type dlist = list [l]
 # val x : Dim.dfloat [m] = 3.
-# val div : Dim.dfloat [`a] -> Dim.dfloat [`b] -> Dim.dfloat [`a / `b] = <fun>
+# val y : Dim.dfloat [m] = 4.
+# - : bool = false
+#   val div : Dim.dfloat [`a] -> Dim.dfloat [`b] -> Dim.dfloat [`a / `b] = <fun>
 #   val lcm :
   Dim.dfloat [`a ** 15] ->
   Dim.dfloat [`a ** 10] -> Dim.dfloat [`a ** 6] -> Dim.dfloat [`a ** 30] =
