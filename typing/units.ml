@@ -210,7 +210,7 @@ let divides_nonvars r vars y =
   check = Array.make (Array.length r) true
 ;;
 
-let newvar m vars used x y =
+let subst_by_fresh m vars used x y =
   let c = m.(x).(y) in
   let n = Array.length m and
       p = Array.length m.(0) in
@@ -248,27 +248,28 @@ let knuth m vars =
     let x,y,c = smallest_elt m used vars in
     if c = 0 then true, substs else
 
-    if c = 1 then begin
-      (* eliminate var n°y in all equations *)
+    let elim () =
+      (* eliminate variable y in all equations *)
       eliminate m used x y;
       used.(x) <- true;    (* mark equation x as used *)
       aux substs
-    end else begin
-      (* c divides all variables coeffs  *)
-      if divides_vars m.(x) vars y
-      then begin
-        (* c also divides nonvariables coeffs *)
-        if divides_nonvars m.(x) vars y
-        then begin
+    in
+    if c = 1 then
+      (* trivial elimination *)
+      elim ()
+    else begin
+      (* if c divides all variables coeffs  *)
+      if divides_vars m.(x) vars y then begin
+        (* then it must also divide all nonvariables coeffs *)
+        if divides_nonvars m.(x) vars y then begin
+          (* divide all coefficients by c *)
           div_row m.(x) c;
-          eliminate m used x y;
-          aux substs
-        end
-
-        else false, substs          (* no solution *)
-      end
-      else
-        aux ((y, newvar m vars used x y)::substs)
+          elim ()
+        end else
+          false, substs          (* no solution *)
+      end else
+        (* replace y by a new variable, reusing the same column *)
+        aux ((y, subst_by_fresh m vars used x y)::substs)
     end
   in aux []
 ;;
