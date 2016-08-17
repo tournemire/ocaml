@@ -246,6 +246,7 @@ and print_simple_out_type ppf =
         )
         n tyl;
       fprintf ppf ")@]"
+  | Otyp_unit ([], []) -> fprintf ppf "[1]"
   | Otyp_unit (vl, bl) ->
      let first = ref true in
      let punit pname (name,e) =

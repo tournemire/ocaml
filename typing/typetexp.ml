@@ -666,7 +666,8 @@ and transl_dim env policy pl =
   let rec dim_of_expr exp =
     let desc = exp.pexp_desc in
     match desc with
-    | Pexp_constant (Pconst_integer _) -> Units.one
+    | Pexp_constant (Pconst_integer (s,None))
+      with Misc.Int_literal_converter.int s = 1 -> Units.one
     | Pexp_ident {txt = Longident.Lident id ; _} ->
        { Units.one with ud_base = [id, 1] }
     | Pexp_variant (s, None) ->

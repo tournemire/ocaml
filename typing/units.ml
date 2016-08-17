@@ -20,9 +20,9 @@ let mul e1 e2 =
 ;;
 
 let pow n e =
-  let f l = List.map (fun (a,b) -> (a, n * b)) l in
-  { ud_vars = f e.ud_vars ;
-    ud_base = f e.ud_base }
+  let mul_m l = List.map (fun (a,b) -> (a, n * b)) l in
+  { ud_vars = mul_m e.ud_vars ;
+    ud_base = mul_m e.ud_base }
 ;;
 
 let inv = pow (-1);;
@@ -30,15 +30,15 @@ let inv = pow (-1);;
 (* test whether n is a common divisor of all exponents in e *)
 let common_divisor n e =
   (* need eta-expansion to be polymorph *)
-  let test l = List.for_all (fun x -> snd x mod n = 0) l in
-  test e.ud_base && test e.ud_vars
+  let all_div l = List.for_all (fun x -> (snd x) mod n = 0) l in
+  all_div e.ud_base && all_div e.ud_vars
 ;;
 
-
+(* substitute instantiated variables *)
 let rec norm e =
   (* call repr on each variable in ud_vars *)
   let vars = List.map (fun (v,e) -> repr v, e) e.ud_vars in
-  (* split variables and other types *)
+  (* separate real variables from instantiated ones *)
   let vars,notvars = List.partition (fun (v,_) -> is_Tvar v) vars in
   List.fold_left (fun ud (t,e)-> match t.desc with
     Tunit ud' -> mul ud (pow e (norm ud'))
@@ -50,13 +50,13 @@ let rec norm e =
 (* try to unify e1 and e2, return true if succeded *)
 let unify link_unit e1 e2 =
   let rec aux e =
-(* substitution, multiplication etc... ensure that variables *)
+    (* substitution, multiplication etc... ensure that variables *)
     (* with exponent zero are eliminated *)
     let e = norm e in
     if e.ud_vars = []
     then List.for_all (fun (_,n) -> n = 0) e.ud_base
     else begin
-      (* find the variable with the smallest non-zero exponent  *)
+      (* find the variable with the smallest non-zero exponent *)
       let rec find_min m = function
         | [] -> m
         | h::t -> let n = if abs (snd h) < abs (snd m) then h else m in
@@ -68,8 +68,9 @@ let unify link_unit e1 e2 =
       else
         let divide_exponents l =
           List.map (fun (x,y) -> (x, - y/n)) l in
-        let new_e = { ud_vars = List.remove_assoc v (divide_exponents e.ud_vars) ;
-                      ud_base = divide_exponents e.ud_base } in
+        let new_e =
+          { ud_vars = List.remove_assoc v (divide_exponents e.ud_vars) ;
+            ud_base = divide_exponents e.ud_base } in
         if common_divisor n e then
           ( link_unit v new_e ; true )
         else
