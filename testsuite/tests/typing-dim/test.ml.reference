@@ -25,17 +25,8 @@
 #           val prodlist :
   Dim.dfloat [`a] list -> Dim.dfloat [`b] list -> Dim.dfloat [`a * `b] list =
   <fun>
-#   Characters -1--1:
-  
-  
-Error: Values do not match:
-         val f : 'a option -> Dim.dfloat [`a] option
-       is not included in
-         val f : 'a option -> Dim.dfloat [`a] option
-# Characters 0-1:
-  f (Some 1);; 
-  ^
-Error: Unbound value f
+#   val f : 'a option -> Dim.dfloat [`a] option = <fun>
+# - : Dim.dfloat [`<bad unit variable>] option = None
 #     Characters 43-84:
     struct let v : dfloat [k] = create 1. end;;
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

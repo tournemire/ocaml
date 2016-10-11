@@ -153,16 +153,14 @@ let build_matrix eqlist =
 
   (* write the equation ud1 = ud2 in the i-nth line *)
   let write_eq i (ud1, ud2) =
+    let ud = mul ud1 (inv ud2) in
     List.iter (fun (v,e) ->
       let j = try index_of v left with Not_found -> num_left + index_of v right
-      in m.(i).(j) <- e) ud1.ud_vars;
+      in m.(i).(j) <- e)
+      ud.ud_vars;
     List.iter
-      (fun (v,e) -> m.(i).(num_left + index_of v right) <- -e)
-      ud2.ud_vars;
-    (* group base variables *)
-    let b = (mul ud1 (inv ud2)).ud_base in
-    List.iter
-      (fun (v,e) -> m.(i).(num_left + num_right + index_of v base) <- e) b
+      (fun (v,e) -> m.(i).(num_left + num_right + index_of v base) <- e)
+      ud.ud_base
   in
 
   (* fill in the matrix *)
