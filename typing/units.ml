@@ -220,6 +220,18 @@ let divides_nonvars r vars y =
   Array.for_all (fun x -> x) check
 ;;
 
+let check_null used m =
+  let ok = ref true in
+  for i = 0 to Array.length m - 1 do
+    if used.(i) || not !ok then () else
+    let row = m.(i) in
+    for j = 0 to Array.length row - 1 do
+      if row.(j) <> 0 then ok := false
+    done
+  done;
+  !ok
+      
+
 (* substitute variable x by a new one simplifying the equation system *)
 (* update matrix and return substitution *)
 let subst_by_fresh m vars used x y =
@@ -259,7 +271,7 @@ let knuth m vars =
 
   let rec aux substs =
     let x,y,c = smallest_elt m used vars in
-    if c = 0 then true, substs else
+    if c = 0 then check_null used m, substs else
 
     let elim () =
       (* eliminate variable y in all equations *)

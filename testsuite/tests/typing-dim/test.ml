@@ -38,4 +38,7 @@ let rec prodlist: 'a 'b. dfloat[`a] list -> dfloat[`b] list -> dfloat[`a * `b] l
   | (x::xs,y::ys) -> (x *: y) :: (prodlist ys xs);;
 
 let f (x : 'a option) : dfloat[`a] option = None;;
-f (Some 1);;
+f (Some 1);; 
+
+module M : sig val v : dfloat [m] end =
+  struct let v : dfloat [k] = create 1. end;;
