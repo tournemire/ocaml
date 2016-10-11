@@ -108,6 +108,13 @@ let index_of x l =
   | [] -> raise Not_found in
   count 0 l
 
+module Sort(S : Set.S) = struct
+  (* sort and eliminate duplicates *)
+  let f l = List.fold_left (fun s e -> S.union s (S.of_list e)) S.empty l
+end
+module SortType = Sort(TypeSet)
+module SortString = Sort(StringSet)
+
 let extract_vars eqlist =
   (* list all variables *)
   let rec get_vars left right base = function
@@ -118,11 +125,10 @@ let extract_vars eqlist =
         let b = List.map fst (List.rev_append l.ud_base r.ud_base) in
         get_vars (lvars::left) (rvars::right) (b::base) q in
   let l,r,b = get_vars [] [] [] eqlist in
-  (* sort and eliminate duplicates *)
-  let sort (type a) (module S : Set.S with type elt = a) l =
-    S.elements (List.fold_left (fun s e -> S.union s (S.of_list e)) S.empty l)
-  in
-  sort (module TypeSet) l, sort (module TypeSet) r, sort (module StringSet) b
+  let rs = SortType.f r in
+  let ls = TypeSet.diff (SortType.f l) rs in
+  let bs = SortString.f b in
+  TypeSet.elements ls, TypeSet.elements rs, StringSet.elements bs
 
 let build_matrix eqlist =
   let eqlist = List.map (fun (ud1,ud2) -> norm ud1, norm ud2) eqlist in
@@ -147,7 +153,9 @@ let build_matrix eqlist =
 
   (* write the equation ud1 = ud2 in the i-nth line *)
   let write_eq i (ud1, ud2) =
-    List.iter (fun (v,e) -> m.(i).(index_of v left) <- e) ud1.ud_vars;
+    List.iter (fun (v,e) ->
+      let j = try index_of v left with Not_found -> num_left + index_of v right
+      in m.(i).(j) <- e) ud1.ud_vars;
     List.iter
       (fun (v,e) -> m.(i).(num_left + index_of v right) <- -e)
       ud2.ud_vars;
