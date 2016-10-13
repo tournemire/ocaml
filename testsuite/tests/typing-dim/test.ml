@@ -43,3 +43,24 @@ f (Some 1);;
 
 module M : sig val v : <m> dfloat end =
   struct let v : <k> dfloat = create 1. end;;
+
+
+module M =
+  struct
+    let x : <'c> dfloat = create 1.0
+    let f : <'a> dfloat -> <'a^2 / 'b^2 * 'c> dfloat -> <m> dfloat =
+      fun _ _ ->
+        let y : <'c> dfloat = x in create 1.0
+  end;;
+
+module M' : sig val f : <'a> dfloat -> <1> dfloat -> <'a> dfloat end = M;;
+
+module M =
+  struct
+    let x : <'c> dfloat = create 1.0
+    let f : <'a> dfloat -> <'a^2 / 'b^2 * 'c> dfloat -> <1> dfloat =
+      fun _ _ ->
+        let y : <'c> dfloat = x in create 1.0
+  end;;
+
+module M' : sig val f : <'a> dfloat -> <1> dfloat -> <'a> dfloat end = M;;

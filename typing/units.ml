@@ -342,7 +342,8 @@ let moregen inst_nongen may_inst link eqlist =
     Array.iteri distribute cols_info;
     typevars,base in
   let typevars, base = unwrap columns_info nvars nbase in
-  let is_var = Array.map may_inst typevars in
+  let is_var =
+    Array.append (Array.map may_inst typevars) (Array.make nbase false) in
 
   (* apply knuth algorithm to the equation system *)
   let success, subst_list = knuth m is_var in

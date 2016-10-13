@@ -260,7 +260,7 @@ and print_simple_out_type ppf =
          | 1 -> fprintf ppf "@ * %a" pname name
          | -1 -> fprintf ppf "@ / %a" pname name
          | _ -> fprintf ppf "@ * %a ^ %d" pname name e
-     and pvar ppf = fprintf ppf "'%s"
+     and pvar ppf (ng, s) = fprintf ppf "'%s%s" (if ng then "_" else "") s
      and pbase ppf = fprintf ppf "%s"
      in
      fprintf ppf "<@[%t%t@]%t>" (fun _ppf -> List.iter (punit pvar) vl)

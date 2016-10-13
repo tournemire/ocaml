@@ -649,8 +649,10 @@ let rec tree_of_typexp sch ty =
        let vl =
          List.map
            (fun (v,e) ->
-             match v.desc with Tvar _ | Tunivar _ -> name_of_type v, e
-             | _ -> "<bad unit variable>", e)
+             match v.desc with
+               Tvar _ | Tunivar _ ->
+                 (is_non_gen sch v, name_of_type v), e
+             | _ -> (false,"<bad unit variable>"), e)
            ud.ud_vars in
        Otyp_unit (vl, ud.ud_base)
 
