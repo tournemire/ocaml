@@ -4268,7 +4268,7 @@ let rec normalize_type_rec env visited ty =
         log_type ty; fi.desc <- fi'.desc
     | Tunit ud ->
        iter_type_expr (normalize_type_rec env visited) ty;
-       ty.desc <- Tunit (Units.norm ud)
+       log_type ty; ty.desc <- Tunit (Units.norm ud)
     | _ -> ()
     end;
     iter_type_expr (normalize_type_rec env visited) ty
