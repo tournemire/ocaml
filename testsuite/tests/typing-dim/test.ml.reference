@@ -37,4 +37,31 @@ Error: Signature mismatch:
          val v : <k> Dim.dfloat
        is not included in
          val v : <m> Dim.dfloat
+#                 module M :
+  sig
+    val x : <'_c> Dim.dfloat
+    val f :
+      <'a> Dim.dfloat ->
+      <'a ^ 2 * 'b ^ -2 * '_c> Dim.dfloat -> <m> Dim.dfloat
+  end
+#   Characters 72-73:
+  module M' : sig val f : <'a> dfloat -> <1> dfloat -> <'a> dfloat end = M;;
+                                                                         ^
+Error: Signature mismatch:
+       ...
+       Values do not match:
+         val f :
+           <'a> Dim.dfloat ->
+           <'a ^ 2 * 'b ^ -2 * '_c> Dim.dfloat -> <m> Dim.dfloat
+       is not included in
+         val f : <'a> Dim.dfloat -> <1> Dim.dfloat -> <'a> Dim.dfloat
+#               module M :
+  sig
+    val x : <'_c> Dim.dfloat
+    val f :
+      <'a> Dim.dfloat ->
+      <'a ^ 2 * '_c * 'b ^ -2> Dim.dfloat -> <'b> Dim.dfloat
+  end
+#   module M' :
+  sig val f : <'a> Dim.dfloat -> <1> Dim.dfloat -> <'a> Dim.dfloat end
 # 

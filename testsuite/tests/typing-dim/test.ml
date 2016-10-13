@@ -50,7 +50,7 @@ module M =
     let x : <'c> dfloat = create 1.0
     let f : <'a> dfloat -> <'a^2 / 'b^2 * 'c> dfloat -> <m> dfloat =
       fun _ _ ->
-        let y : <'c> dfloat = x in create 1.0
+        let y : <'c> dfloat = x in ignore y; create 1.0
   end;;
 
 module M' : sig val f : <'a> dfloat -> <1> dfloat -> <'a> dfloat end = M;;
@@ -58,9 +58,9 @@ module M' : sig val f : <'a> dfloat -> <1> dfloat -> <'a> dfloat end = M;;
 module M =
   struct
     let x : <'c> dfloat = create 1.0
-    let f : <'a> dfloat -> <'a^2 / 'b^2 * 'c> dfloat -> <1> dfloat =
+    let f : <'a> dfloat -> <'a^2 / 'b^2 * 'c> dfloat -> <'b> dfloat =
       fun _ _ ->
-        let y : <'c> dfloat = x in create 1.0
+        let y : <'c> dfloat = x in ignore y; create 1.0
   end;;
 
 module M' : sig val f : <'a> dfloat -> <1> dfloat -> <'a> dfloat end = M;;

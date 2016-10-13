@@ -283,7 +283,10 @@ let knuth m vars =
       (* eliminate variable y in all equations *)
       eliminate m used x y;
       used.(x) <- true;    (* mark equation x as used *)
-      aux substs
+      let row = Array.copy m.(x) in
+      for i = 0 to Array.length row - 1 do row.(i) <- -row.(i) done;
+      row.(y) <- 0;
+      aux ((y, row)::substs)
     in
     if c = 1 then
       (* if a variable has coeff 1 we can eliminate it from the system *)
@@ -362,7 +365,11 @@ let moregen inst_nongen may_inst link eqlist =
       let ud_base = Array.mapi (fun i t -> t,img.(i + nvars)) base in
       let ud_base = filter_nonzeros ud_base in
       {ud_vars ; ud_base} in
-    List.iter (fun (i,s) -> link typevars.(i) (build_unit s)) sol
+    List.iter (fun (i,s) ->
+      let ud = build_unit s in
+      (* Format.eprintf "%a@ %a@." !print_raw typevars.(i)
+        !print_raw (newgenty (Tunit ud)); *)
+      link typevars.(i) ud) sol
   end ;
   success
 ;;
