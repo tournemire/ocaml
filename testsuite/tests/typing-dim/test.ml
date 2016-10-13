@@ -39,22 +39,14 @@ let rec prodlist:
   | (x::xs,y::ys) -> (x *: y) :: (prodlist ys xs);;
 
 let f (x : 'a option) : <'a> dfloat option = None;;
-f (Some 1);; 
+f (Some 1);; (* fail: bad unit variable *)
 
+(* fail: incompatible *)
 module M : sig val v : <m> dfloat end =
   struct let v : <k> dfloat = create 1. end;;
 
 
-module M =
-  struct
-    let x : <'c> dfloat = create 1.0
-    let f : <'a> dfloat -> <'a^2 / 'b^2 * 'c> dfloat -> <m> dfloat =
-      fun _ _ ->
-        let y : <'c> dfloat = x in ignore y; create 1.0
-  end;;
-
-module M' : sig val f : <'a> dfloat -> <1> dfloat -> <'a> dfloat end = M;;
-
+(* success: 'c can be instantiated with 1 *)
 module M =
   struct
     let x : <'c> dfloat = create 1.0
@@ -62,5 +54,25 @@ module M =
       fun _ _ ->
         let y : <'c> dfloat = x in ignore y; create 1.0
   end;;
-
 module M' : sig val f : <'a> dfloat -> <1> dfloat -> <'a> dfloat end = M;;
+
+(* fail: non-generalizable 'c cannot be instantiated with outside 'a *)
+module M =
+  struct
+    let x : <'c> dfloat = create 1.0
+    let f : <'a> dfloat -> <'a^2 / 'b * 'c> dfloat -> <'b> dfloat =
+      fun _ _ ->
+        let y : <'c> dfloat = x in ignore y; create 1.0
+  end;;
+module M' : sig val f : <'a> dfloat -> <1> dfloat -> <'a> dfloat end = M;;
+
+(* fail: outside 'a cannot be instantiated with <m> *)
+module M =
+  struct
+    let x : <'c> dfloat = create 1.0
+    let f : <'a> dfloat -> <'a^2 / 'b * 'c> dfloat -> <m> dfloat =
+      fun _ _ ->
+        let y : <'c> dfloat = x in ignore y; create 1.0
+  end;;
+module M' : sig val f : <'a> dfloat -> <1> dfloat -> <'a> dfloat end = M;;
+

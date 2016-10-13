@@ -25,7 +25,7 @@
   <fun>
 #   val f : 'a option -> <'a> Dim.dfloat option = <fun>
 # - : <'<bad unit variable>> Dim.dfloat option = None
-#     Characters 43-84:
+#       Characters 68-109:
     struct let v : <k> dfloat = create 1. end;;
     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 Error: Signature mismatch:
@@ -37,14 +37,22 @@ Error: Signature mismatch:
          val v : <k> Dim.dfloat
        is not included in
          val v : <m> Dim.dfloat
-#                 module M :
+#                   module M :
   sig
     val x : <'_c> Dim.dfloat
     val f :
       <'a> Dim.dfloat ->
-      <'a ^ 2 * 'b ^ -2 * '_c> Dim.dfloat -> <m> Dim.dfloat
+      <'a ^ 2 * '_c * 'b ^ -2> Dim.dfloat -> <'b> Dim.dfloat
   end
-#   Characters 72-73:
+# module M' :
+  sig val f : <'a> Dim.dfloat -> <1> Dim.dfloat -> <'a> Dim.dfloat end
+#                 module M :
+  sig
+    val x : <'_c> Dim.dfloat
+    val f :
+      <'a> Dim.dfloat -> <'a ^ 2 * '_c / 'b> Dim.dfloat -> <'b> Dim.dfloat
+  end
+# Characters 71-72:
   module M' : sig val f : <'a> dfloat -> <1> dfloat -> <'a> dfloat end = M;;
                                                                          ^
 Error: Signature mismatch:
@@ -52,16 +60,24 @@ Error: Signature mismatch:
        Values do not match:
          val f :
            <'a> Dim.dfloat ->
-           <'a ^ 2 * 'b ^ -2 * '_c> Dim.dfloat -> <m> Dim.dfloat
+           <'a ^ 2 * '_c / 'b> Dim.dfloat -> <'b> Dim.dfloat
        is not included in
          val f : <'a> Dim.dfloat -> <1> Dim.dfloat -> <'a> Dim.dfloat
-#               module M :
+#                 module M :
   sig
     val x : <'_c> Dim.dfloat
     val f :
-      <'a> Dim.dfloat ->
-      <'a ^ 2 * '_c * 'b ^ -2> Dim.dfloat -> <'b> Dim.dfloat
+      <'a> Dim.dfloat -> <'a ^ 2 / 'b * '_c> Dim.dfloat -> <m> Dim.dfloat
   end
-#   module M' :
-  sig val f : <'a> Dim.dfloat -> <1> Dim.dfloat -> <'a> Dim.dfloat end
-# 
+# Characters 71-72:
+  module M' : sig val f : <'a> dfloat -> <1> dfloat -> <'a> dfloat end = M;;
+                                                                         ^
+Error: Signature mismatch:
+       ...
+       Values do not match:
+         val f :
+           <'a> Dim.dfloat ->
+           <'a ^ 2 / 'b * '_c> Dim.dfloat -> <m> Dim.dfloat
+       is not included in
+         val f : <'a> Dim.dfloat -> <1> Dim.dfloat -> <'a> Dim.dfloat
+#   
