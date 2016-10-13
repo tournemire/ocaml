@@ -2258,6 +2258,9 @@ simple_core_type2:
       { let (f, c) = $2 in mktyp(Ptyp_object (f, c)) }
   | LESS GREATER
       { mktyp(Ptyp_object ([], Closed)) }
+  | LESS unit_expr GREATER
+      { mktyp_attrs Ptyp_any
+                    (None,[mknoloc "ocaml.dim", PStr [mkstrexp $2 []]]) }
   | HASH class_longident
       { mktyp(Ptyp_class(mkrhs $2 2, [])) }
   | simple_core_type2 HASH class_longident

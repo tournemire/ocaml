@@ -192,13 +192,13 @@ and print_simple_out_type ppf =
     Otyp_class (ng, id, tyl) ->
       fprintf ppf "@[%a%s#%a@]" print_typargs tyl (if ng then "_" else "")
         print_ident id
-  | Otyp_constr (id, (Otyp_unit _ as ou) :: tyl) ->
+  (*| Otyp_constr (id, (Otyp_unit _ as ou) :: tyl) ->
       pp_open_box ppf 0;
       print_typargs ppf tyl;
       print_ident ppf id;
       pp_print_space ppf ();
       print_simple_out_type ppf ou;
-      pp_close_box ppf ()
+      pp_close_box ppf ()*)
   | Otyp_constr (id, tyl) ->
       pp_open_box ppf 0;
       print_typargs ppf tyl;
@@ -263,7 +263,7 @@ and print_simple_out_type ppf =
      and pvar ppf = fprintf ppf "'%s"
      and pbase ppf = fprintf ppf "%s"
      in
-     fprintf ppf "[@[%t%t@]%t]" (fun _ppf -> List.iter (punit pvar) vl)
+     fprintf ppf "<@[%t%t@]%t>" (fun _ppf -> List.iter (punit pvar) vl)
        (fun _ppf -> List.iter (punit pbase) bl)
        (fun ppf -> if !first then fprintf ppf "1")
   | Otyp_attribute (t, attr) ->

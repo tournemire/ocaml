@@ -302,7 +302,13 @@ let rec transl_type env policy styp =
   match styp.ptyp_desc with
     Ptyp_any ->
       let ty =
-        if policy = Univars then new_pre_univar () else
+        (* retrieve dimensional attribute *)
+        try
+          let pl = List.assoc (mknoloc "ocaml.dim") styp.ptyp_attributes in
+          let ud = transl_dim env policy pl in
+          newty (Tunit ud)
+        with Not_found ->
+          if policy = Univars then new_pre_univar () else
           if policy = Fixed then
             raise (Error (styp.ptyp_loc, env, Unbound_type_variable "_"))
           else newvar ()
