@@ -2301,9 +2301,9 @@ unit_expr:
 unit_monome:
     unit_var_or_base
       { $1 }
-  | unit_var_or_base INFIXOP1 constant
+  | unit_var_or_base INFIXOP1 signed_constant
       { mkinfix $1 $2 (mkexp (Pexp_constant $3)) }
-  | unit_var_or_base INFIXOP4 constant
+  | unit_var_or_base INFIXOP4 signed_constant
       { mkinfix $1 $2 (mkexp (Pexp_constant $3)) }
   | constant
       { mkexp (Pexp_constant $1) }
