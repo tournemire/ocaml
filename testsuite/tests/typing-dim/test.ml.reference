@@ -80,4 +80,8 @@ Error: Signature mismatch:
            <'a ^ 2 / 'b * '_c> Dim.dfloat -> <m> Dim.dfloat
        is not included in
          val f : <'a> Dim.dfloat -> <1> Dim.dfloat -> <'a> Dim.dfloat
-#   
+#     val g : <m * s ^ -2> Dim.dfloat = 9.8
+# val speed : <s> Dim.dfloat -> <m / s> Dim.dfloat = <fun>
+#   val foot : <ft ^ -1 * m> Dim.dfloat = 0.305
+# val feet_to_meters : <ft> Dim.dfloat -> <m> Dim.dfloat = <fun>
+# 

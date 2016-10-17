@@ -76,3 +76,9 @@ module M =
   end;;
 module M' : sig val f : <'a> dfloat -> <1> dfloat -> <'a> dfloat end = M;;
 
+(* Some more examples *)
+let g : <m * s ^ -2> dfloat = create 9.8;;
+let speed (t : <s> dfloat) = t *: g;;
+
+let foot : <m/ft> dfloat = create 0.305;;
+let feet_to_meters (x : <ft> dfloat) = x *: foot;;
